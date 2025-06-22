@@ -7,7 +7,7 @@ import unittest
 import tempfile
 import os
 from app import app, db
-from models import Hand, Player, Action, Position
+from models import Hand, Player, Action
 
 class TestPositionTemplateRendering(unittest.TestCase):
     """Test Position enum functionality in template rendering"""
@@ -81,13 +81,13 @@ class TestPositionTemplateRendering(unittest.TestCase):
             db.session.add(hand)
             db.session.flush()
             
-            # Create players with all position enum values
-            position_names = ['Player_SB', 'Player_BB', 'Player_UTG', 'Player_UTG1', 
-                            'Player_MP', 'Player_LJ', 'Player_HJ', 'Player_CO', 'Player_BTN']
-            positions = [Position.SB, Position.BB, Position.UTG, Position.UTG1,
-                        Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN]
+            # Create players with all position string values
+            players_data = [
+                ('Player_SB', 'SB'), ('Player_BB', 'BB'), ('Player_UTG', 'UTG'), ('Player_UTG1', 'UTG1'),
+                ('Player_MP', 'MP'), ('Player_LJ', 'LJ'), ('Player_HJ', 'HJ'), ('Player_CO', 'CO'), ('Player_BTN', 'BTN')
+            ]
             
-            for name, pos in zip(position_names, positions):
+            for name, pos in players_data:
                 player = Player(
                     hand_id=hand.id,
                     name=name,
@@ -125,12 +125,12 @@ class TestPositionTemplateRendering(unittest.TestCase):
             db.session.add(hand)
             db.session.flush()
             
-            # Create players including some beyond enum range
+            # Create players including some with fallback positions
             players_data = [
-                ('Player1', Position.SB),
-                ('Player2', Position.BB),
-                ('Player3', 9),  # Beyond enum range
-                ('Player4', 10), # Beyond enum range
+                ('Player1', 'SB'),
+                ('Player2', 'BB'),
+                ('Player3', 'P9'),  # Fallback position format
+                ('Player4', 'P10'), # Fallback position format
             ]
             
             for name, pos in players_data:
@@ -151,16 +151,16 @@ class TestPositionTemplateRendering(unittest.TestCase):
         
         html_content = response.data.decode('utf-8')
         
-        # Check that enum positions show names
+        # Check that standard positions show names
         self.assertIn('SB', html_content)
         self.assertIn('BB', html_content)
         
-        # Check that extra positions show fallback format
+        # Check that fallback positions are displayed correctly
         self.assertIn('P9', html_content)
         self.assertIn('P10', html_content)
     
-    def test_position_enum_accessibility_in_template(self):
-        """Test that Position enum is accessible in template context"""
+    def test_position_string_display_in_template(self):
+        """Test that position strings are displayed correctly in template"""
         # Create a sample hand
         sample_response = self.client.post('/api/create-sample')
         self.assertEqual(sample_response.status_code, 200)
@@ -174,11 +174,11 @@ class TestPositionTemplateRendering(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         
         # The fact that we get a successful response with position names
-        # means the Position enum is properly accessible in the template
+        # means the position strings are properly displayed in the template
         html_content = response.data.decode('utf-8')
         
-        # Verify the template can call Position.get_display_name
-        # This is confirmed by the presence of position names instead of numbers
+        # Verify the template displays position strings correctly
+        # This is confirmed by the presence of position names
         position_names = ['SB', 'BB', 'UTG', 'UTG1', 'MP', 'LJ', 'HJ', 'CO', 'BTN']
         found_positions = [name for name in position_names if name in html_content]
         

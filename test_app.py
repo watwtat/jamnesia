@@ -4,7 +4,7 @@ import tempfile
 import os
 from flask import Flask
 from app import app, db
-from models import Hand, Player, Action, Position
+from models import Hand, Player, Action
 
 
 class TestApp(unittest.TestCase):
@@ -523,28 +523,25 @@ class TestPositionIntegration(unittest.TestCase):
         data = json.loads(response.data)
         self.assertEqual(data['status'], 'success')
         
-        # Check that players were created with correct Position enum values
+        # Check that players were created with correct position strings
         with app.app_context():
-            players = Player.query.order_by(Player.position).all()
+            players = Player.query.all()
             self.assertEqual(len(players), 3)
             
-            # Alice should be SB (position 0)
-            alice = players[0]
-            self.assertEqual(alice.name, 'Alice')
-            self.assertEqual(alice.position, Position.SB)
-            self.assertEqual(alice.position, 0)
+            # Find players by name since ordering by string position is different
+            player_dict = {p.name: p for p in players}
             
-            # Bob should be BB (position 1) 
-            bob = players[1]
-            self.assertEqual(bob.name, 'Bob')
-            self.assertEqual(bob.position, Position.BB)
-            self.assertEqual(bob.position, 1)
+            # Alice should be SB
+            alice = player_dict['Alice']
+            self.assertEqual(alice.position, 'SB')
             
-            # Charlie should be UTG (position 2)
-            charlie = players[2]
-            self.assertEqual(charlie.name, 'Charlie')
-            self.assertEqual(charlie.position, Position.UTG)
-            self.assertEqual(charlie.position, 2)
+            # Bob should be BB
+            bob = player_dict['Bob']
+            self.assertEqual(bob.position, 'BB')
+            
+            # Charlie should be UTG
+            charlie = player_dict['Charlie']
+            self.assertEqual(charlie.position, 'UTG')
     
     def test_position_enum_in_regular_hand_saving(self):
         """Test that Position enum is used correctly in regular hand saving"""
@@ -571,19 +568,19 @@ class TestPositionIntegration(unittest.TestCase):
         
         self.assertEqual(response.status_code, 200)
         
-        # Check that players were created with correct Position enum values
+        # Check that players were created with correct position strings
         with app.app_context():
-            players = Player.query.order_by(Player.position).all()
+            players = Player.query.all()
             self.assertEqual(len(players), 4)
             
-            # Verify positions match enum values
-            expected_positions = [Position.SB, Position.BB, Position.UTG, Position.UTG1]
-            for i, (player, expected_pos) in enumerate(zip(players, expected_positions)):
-                self.assertEqual(player.position, expected_pos)
-                self.assertEqual(player.position, i)
+            # Verify positions are string values
+            expected_positions = ['SB', 'BB', 'UTG', 'UTG1']
+            player_positions = sorted([p.position for p in players])
+            expected_positions_sorted = sorted(expected_positions)
+            self.assertEqual(player_positions, expected_positions_sorted)
     
-    def test_position_display_name_functionality(self):
-        """Test Position.get_display_name method with database data"""
+    def test_position_string_display_functionality(self):
+        """Test that position strings are stored and displayed correctly"""
         # Create a sample hand
         response = self.client.post('/api/create-sample')
         self.assertEqual(response.status_code, 200)
@@ -592,19 +589,12 @@ class TestPositionIntegration(unittest.TestCase):
             players = Player.query.all()
             
             for player in players:
-                # Test that get_display_name works for all saved positions
-                display_name = Position.get_display_name(player.position)
+                # Test that position is stored as string
+                self.assertIsInstance(player.position, str)
                 
-                # Verify it returns expected names
-                if player.position == Position.SB:
-                    self.assertEqual(display_name, 'SB')
-                elif player.position == Position.BB:
-                    self.assertEqual(display_name, 'BB')
-                elif player.position == Position.UTG:
-                    self.assertEqual(display_name, 'UTG')
-                else:
-                    # Should not happen with sample hand, but test anyway
-                    self.assertIsInstance(display_name, str)
+                # Verify it's one of the expected position values
+                expected_positions = ['SB', 'BB', 'UTG']
+                self.assertIn(player.position, expected_positions)
     
     def test_position_enum_with_many_players(self):
         """Test Position enum handling with maximum number of players"""
@@ -632,17 +622,16 @@ class TestPositionIntegration(unittest.TestCase):
             players = Player.query.order_by(Player.position).all()
             self.assertEqual(len(players), 9)
             
-            # Verify all Position enum values are used correctly
+            # Verify all position strings are used correctly
             expected_positions = [
-                Position.SB, Position.BB, Position.UTG, Position.UTG1,
-                Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN
+                'SB', 'BB', 'UTG', 'UTG1',
+                'MP', 'LJ', 'HJ', 'CO', 'BTN'
             ]
             
-            for player, expected_pos in zip(players, expected_positions):
-                self.assertEqual(player.position, expected_pos)
-                # Verify display name works
-                display_name = Position.get_display_name(player.position)
-                self.assertEqual(display_name, expected_pos.name)
+            # Check that we have the expected positions (order may vary)
+            actual_positions = sorted([p.position for p in players])
+            expected_positions_sorted = sorted(expected_positions)
+            self.assertEqual(actual_positions, expected_positions_sorted)
     
     def test_position_enum_with_rejected_extra_players(self):
         """Test that hands with 10+ players are rejected"""

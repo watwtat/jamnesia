@@ -106,7 +106,7 @@ class TestModels(unittest.TestCase):
             name='Alice',
             stack=100.0,
             hole_cards='AsKh',
-            position=0
+            position='SB'
         )
         
         db.session.add(player)
@@ -119,7 +119,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(saved_player.name, 'Alice')
         self.assertEqual(saved_player.stack, 100.0)
         self.assertEqual(saved_player.hole_cards, 'AsKh')
-        self.assertEqual(saved_player.position, 0)
+        self.assertEqual(saved_player.position, 'SB')
     
     def test_player_repr(self):
         """Test Player model string representation"""
@@ -189,8 +189,8 @@ class TestModels(unittest.TestCase):
         db.session.commit()
         
         # Create players
-        player1 = Player(hand_id=hand.id, name='Alice', stack=100.0, position=0)
-        player2 = Player(hand_id=hand.id, name='Bob', stack=150.0, position=1)
+        player1 = Player(hand_id=hand.id, name='Alice', stack=100.0, position='SB')
+        player2 = Player(hand_id=hand.id, name='Bob', stack=150.0, position='BB')
         
         db.session.add_all([player1, player2])
         db.session.commit()
@@ -296,9 +296,9 @@ class TestModels(unittest.TestCase):
         
         # Create players
         players_data = [
-            {'name': 'Alice', 'stack': 100.0, 'hole_cards': 'AsKh', 'position': 0},
-            {'name': 'Bob', 'stack': 150.0, 'hole_cards': 'QdQc', 'position': 1},
-            {'name': 'Charlie', 'stack': 200.0, 'hole_cards': '7s2h', 'position': 2}
+            {'name': 'Alice', 'stack': 100.0, 'hole_cards': 'AsKh', 'position': 'SB'},
+            {'name': 'Bob', 'stack': 150.0, 'hole_cards': 'QdQc', 'position': 'BB'},
+            {'name': 'Charlie', 'stack': 200.0, 'hole_cards': '7s2h', 'position': 'UTG'}
         ]
         
         for player_data in players_data:
