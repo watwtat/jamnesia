@@ -68,6 +68,8 @@ class Action(db.Model):
     player_name = db.Column(db.String(50), nullable=False)
     action_type = db.Column(db.String(20), nullable=False)  # 'fold', 'call', 'bet', 'raise', 'check'
     amount = db.Column(db.Float, default=0.0)
+    pot_size = db.Column(db.Float, default=0.0)  # Pot size after this action
+    remaining_stack = db.Column(db.Float, default=0.0)  # Player's remaining stack after this action
     action_order = db.Column(db.Integer, nullable=False)  # Action sequence order
     
     def __repr__(self):

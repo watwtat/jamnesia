@@ -55,6 +55,8 @@
                     {% if action.amount > 0 %}
                         <span class="text-sm ml-1">${{ action.amount }}</span>
                     {% endif %}
+                    <div class="text-xs text-gray-500">Pot: ${{ action.pot_size }}</div>
+                    <div class="text-xs text-gray-500">Stack: ${{ action.remaining_stack }}</div>
                 </div>
             </div>
             {% endfor %}

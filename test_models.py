@@ -140,6 +140,8 @@ class TestModels(unittest.TestCase):
             player_name='Alice',
             action_type='bet',
             amount=5.0,
+            pot_size=12.5,
+            remaining_stack=95.0,
             action_order=1
         )
         
@@ -154,6 +156,8 @@ class TestModels(unittest.TestCase):
         self.assertEqual(saved_action.player_name, 'Alice')
         self.assertEqual(saved_action.action_type, 'bet')
         self.assertEqual(saved_action.amount, 5.0)
+        self.assertEqual(saved_action.pot_size, 12.5)
+        self.assertEqual(saved_action.remaining_stack, 95.0)
         self.assertEqual(saved_action.action_order, 1)
     
     def test_action_default_amount(self):
@@ -175,6 +179,8 @@ class TestModels(unittest.TestCase):
         
         saved_action = Action.query.filter_by(player_name='Bob').first()
         self.assertEqual(saved_action.amount, 0.0)
+        self.assertEqual(saved_action.pot_size, 0.0)
+        self.assertEqual(saved_action.remaining_stack, 0.0)
     
     def test_action_repr(self):
         """Test Action model string representation"""
@@ -307,11 +313,11 @@ class TestModels(unittest.TestCase):
         
         # Create actions
         actions_data = [
-            {'street': 'preflop', 'player_name': 'Charlie', 'action_type': 'fold', 'amount': 0, 'action_order': 0},
-            {'street': 'preflop', 'player_name': 'Alice', 'action_type': 'raise', 'amount': 6, 'action_order': 1},
-            {'street': 'preflop', 'player_name': 'Bob', 'action_type': 'call', 'amount': 0, 'action_order': 2},
-            {'street': 'flop', 'player_name': 'Alice', 'action_type': 'bet', 'amount': 8, 'action_order': 3},
-            {'street': 'flop', 'player_name': 'Bob', 'action_type': 'fold', 'amount': 0, 'action_order': 4}
+            {'street': 'preflop', 'player_name': 'Charlie', 'action_type': 'fold', 'amount': 0, 'pot_size': 3.0, 'remaining_stack': 200.0, 'action_order': 0},
+            {'street': 'preflop', 'player_name': 'Alice', 'action_type': 'raise', 'amount': 6, 'pot_size': 9.0, 'remaining_stack': 94.0, 'action_order': 1},
+            {'street': 'preflop', 'player_name': 'Bob', 'action_type': 'call', 'amount': 0, 'pot_size': 15.0, 'remaining_stack': 144.0, 'action_order': 2},
+            {'street': 'flop', 'player_name': 'Alice', 'action_type': 'bet', 'amount': 8, 'pot_size': 23.0, 'remaining_stack': 86.0, 'action_order': 3},
+            {'street': 'flop', 'player_name': 'Bob', 'action_type': 'fold', 'amount': 0, 'pot_size': 23.0, 'remaining_stack': 144.0, 'action_order': 4}
         ]
         
         for action_data in actions_data:

@@ -66,7 +66,7 @@
             <div>
                 <h3 class="text-lg font-bold mb-4">Actions</h3>
                 <div id="actions-container">
-                    <div class="action-row grid md:grid-cols-4 gap-4 mb-4">
+                    <div class="action-row grid md:grid-cols-6 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Player</label>
                             <input type="text" name="action_player_0" placeholder="Alice" class="form-input" required>
@@ -85,6 +85,14 @@
                         <div>
                             <label class="block text-sm font-medium mb-2">Amount</label>
                             <input type="number" name="action_amount_0" step="0.5" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Pot Size</label>
+                            <input type="number" name="action_pot_size_0" step="0.5" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Remaining Stack</label>
+                            <input type="number" name="action_remaining_stack_0" step="0.5" class="form-input">
                         </div>
                         <div class="flex items-end">
                             <button type="button" class="btn btn-secondary" onclick="removeAction(this)">Remove</button>
@@ -143,7 +151,7 @@ function removePlayer(button) {
 function addAction() {
     const container = document.getElementById('actions-container');
     const newRow = document.createElement('div');
-    newRow.className = 'action-row grid md:grid-cols-4 gap-4 mb-4';
+    newRow.className = 'action-row grid md:grid-cols-6 gap-4 mb-4';
     newRow.innerHTML = `
         <div>
             <label class="block text-sm font-medium mb-2">Player</label>
@@ -163,6 +171,14 @@ function addAction() {
         <div>
             <label class="block text-sm font-medium mb-2">Amount</label>
             <input type="number" name="action_amount_${actionCount}" step="0.5" class="form-input">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2">Pot Size</label>
+            <input type="number" name="action_pot_size_${actionCount}" step="0.5" class="form-input">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2">Remaining Stack</label>
+            <input type="number" name="action_remaining_stack_${actionCount}" step="0.5" class="form-input">
         </div>
         <div class="flex items-end">
             <button type="button" class="btn btn-secondary" onclick="removeAction(this)">Remove</button>
@@ -211,12 +227,16 @@ document.getElementById('hand-form').addEventListener('submit', function(e) {
         const player = formData.get(`action_player_${i}`);
         const type = formData.get(`action_type_${i}`);
         const amount = formData.get(`action_amount_${i}`);
+        const potSize = formData.get(`action_pot_size_${i}`);
+        const remainingStack = formData.get(`action_remaining_stack_${i}`);
         
         if (player && type) {
             actions.push({
                 player_name: player,
                 action_type: type,
-                amount: amount ? parseFloat(amount) : 0
+                amount: amount ? parseFloat(amount) : 0,
+                pot_size: potSize ? parseFloat(potSize) : 0.0,
+                remaining_stack: remainingStack ? parseFloat(remainingStack) : 0.0
             });
         }
     }

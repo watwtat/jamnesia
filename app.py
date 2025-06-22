@@ -170,6 +170,8 @@ def save_hand():
                 player_name=action_data['player_name'],
                 action_type=action_data['action_type'],
                 amount=action_data.get('amount', 0),
+                pot_size=action_data.get('pot_size', 0.0),
+                remaining_stack=action_data.get('remaining_stack', 0.0),
                 action_order=i
             )
             db.session.add(action)
@@ -200,11 +202,11 @@ def create_sample():
                 {'name': 'Charlie', 'stack': 150.0}
             ],
             "actions": [
-                {"player_name": "Charlie", "action_type": "fold", "street": "preflop"},
-                {"player_name": "Alice", "action_type": "raise", "amount": 6.0, "street": "preflop"},
-                {"player_name": "Bob", "action_type": "call", "street": "preflop"},
-                {"player_name": "Alice", "action_type": "bet", "amount": 8.0, "street": "flop"},
-                {"player_name": "Bob", "action_type": "fold", "street": "flop"}
+                {"player_name": "Charlie", "action_type": "fold", "street": "preflop", "pot_size": 3.0, "remaining_stack": 150.0},
+                {"player_name": "Alice", "action_type": "raise", "amount": 6.0, "street": "preflop", "pot_size": 9.0, "remaining_stack": 94.0},
+                {"player_name": "Bob", "action_type": "call", "street": "preflop", "pot_size": 15.0, "remaining_stack": 94.0},
+                {"player_name": "Alice", "action_type": "bet", "amount": 8.0, "street": "flop", "pot_size": 23.0, "remaining_stack": 86.0},
+                {"player_name": "Bob", "action_type": "fold", "street": "flop", "pot_size": 23.0, "remaining_stack": 94.0}
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
@@ -330,6 +332,8 @@ def create_sample():
                 player_name=action_data['player_name'],
                 action_type=action_data['action_type'],
                 amount=action_data.get('amount', 0),
+                pot_size=action_data.get('pot_size', 0.0),
+                remaining_stack=action_data.get('remaining_stack', 0.0),
                 action_order=i
             )
             db.session.add(action)

@@ -63,7 +63,7 @@ A web application to record poker hands using PokerKit, save them in PHH (Poker 
 2. Configure game settings (small blind, big blind)
 3. Add players with their names, stacks, and hole cards
 4. Set board cards (flop, turn, river) if applicable
-5. Add actions in sequence (fold, check, call, bet, raise)
+5. Add actions in sequence (fold, check, call, bet, raise) with pot size and remaining stack after each action
 6. Click "Save Hand" to generate PHH and store in database
 
 ### View Saved Hands
@@ -90,8 +90,8 @@ Content-Type: application/json
     {"name": "Bob", "stack": 100.0}
   ],
   "actions": [
-    {"player_name": "Alice", "action_type": "bet", "amount": 5.0},
-    {"player_name": "Bob", "action_type": "call"}
+    {"player_name": "Alice", "action_type": "bet", "amount": 5.0, "pot_size": 7.0, "remaining_stack": 95.0},
+    {"player_name": "Bob", "action_type": "call", "pot_size": 12.0, "remaining_stack": 95.0}
   ],
   "small_blind": 1.0,
   "big_blind": 2.0,
@@ -144,6 +144,8 @@ POST /api/create-sample
 - `player_name`: Player who made the action
 - `action_type`: Type of action ("fold", "check", "call", "bet", "raise")
 - `amount`: Bet/raise amount
+- `pot_size`: Pot size after this action
+- `remaining_stack`: Player's remaining stack after this action
 - `action_order`: Sequence order of the action
 
 ## Development
