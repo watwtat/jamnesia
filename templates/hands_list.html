@@ -1,0 +1,28 @@
+{% if hands %}
+    <div class="space-y-4">
+        {% for hand in hands %}
+        <div class="border rounded-lg p-4 hover:bg-gray-50">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-bold text-lg">{{ hand.play_id }}</h4>
+                    <p class="text-gray-600">{{ hand.game_type }}</p>
+                    <p class="text-sm text-gray-500">{{ hand.created_at }}</p>
+                </div>
+                <div class="space-x-2">
+                    <button class="btn btn-primary btn-sm" 
+                            hx-get="/api/hands/{{ hand.play_id }}/details"
+                            hx-target="#hand-detail-content"
+                            onclick="document.getElementById('hand-detail-modal').classList.remove('hidden')">
+                        Details
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-8 text-gray-500">
+        <p>No hands saved yet.</p>
+        <a href="/input" class="btn btn-primary mt-4">Input your first hand</a>
+    </div>
+{% endif %}

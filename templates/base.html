@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Jamnesia - Poker Hand Tracker{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .card { @apply bg-white rounded-lg shadow-md p-6; }
+        .btn { @apply px-4 py-2 rounded font-medium transition-colors; }
+        .btn-primary { @apply bg-blue-500 text-white hover:bg-blue-600; }
+        .btn-secondary { @apply bg-gray-300 text-gray-700 hover:bg-gray-400; }
+        .form-input { @apply border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">Jamnesia</h1>
+            <div class="space-x-4">
+                <a href="/" class="hover:underline">Home</a>
+                <a href="/input" class="hover:underline">Input Hand</a>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container mx-auto py-8 px-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Hand Detail Modal -->
+    <div id="hand-detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">Hand Details</h3>
+                        <button onclick="document.getElementById('hand-detail-modal').classList.add('hidden')" 
+                                class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="hand-detail-content">
+                        <!-- Content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Custom HTMX event handlers
+        document.addEventListener('htmx:responseError', function(event) {
+            console.error('HTMX Error:', event.detail);
+            alert('An error occurred: ' + event.detail.xhr.responseText);
+        });
+    </script>
+</body>
+</html>

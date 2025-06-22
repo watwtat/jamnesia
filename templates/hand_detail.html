@@ -1,0 +1,72 @@
+<div class="space-y-6">
+    <!-- Hand Information -->
+    <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="font-bold text-lg mb-2">Hand Information</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p><strong>Play ID:</strong> {{ hand.play_id }}</p>
+                <p><strong>Game Type:</strong> {{ hand.game_type }}</p>
+                <p><strong>Created:</strong> {{ hand.created_at }}</p>
+            </div>
+            <div>
+                <p><strong>Small Blind:</strong> ${{ hand.small_blind }}</p>
+                <p><strong>Big Blind:</strong> ${{ hand.big_blind }}</p>
+                {% if hand.board %}
+                <p><strong>Board:</strong> {{ hand.board }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Players -->
+    <div class="bg-blue-50 rounded-lg p-4">
+        <h4 class="font-bold text-lg mb-2">Players</h4>
+        <div class="space-y-2">
+            {% for player in players %}
+            <div class="flex justify-between items-center bg-white rounded p-2">
+                <div>
+                    <span class="font-medium">{{ player.name }}</span>
+                    {% if player.hole_cards %}
+                        <span class="text-sm text-gray-600 ml-2">({{ player.hole_cards }})</span>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <span class="text-sm text-gray-600">Position {{ player.position }}</span>
+                    <div class="font-medium">${{ player.stack }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Actions -->
+    {% if actions %}
+    <div class="bg-green-50 rounded-lg p-4">
+        <h4 class="font-bold text-lg mb-2">Actions</h4>
+        <div class="space-y-1">
+            {% for action in actions %}
+            <div class="flex justify-between items-center bg-white rounded p-2">
+                <div>
+                    <span class="font-medium">{{ action.player_name }}</span>
+                    <span class="text-sm text-gray-600 ml-2">({{ action.street }})</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-medium text-blue-600">{{ action.action_type }}</span>
+                    {% if action.amount > 0 %}
+                        <span class="text-sm ml-1">${{ action.amount }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- PHH Content -->
+    {% if hand.phh_content %}
+    <div class="bg-yellow-50 rounded-lg p-4">
+        <h4 class="font-bold text-lg mb-2">PHH Content</h4>
+        <pre class="bg-white p-3 rounded border text-sm overflow-x-auto">{{ hand.phh_content }}</pre>
+    </div>
+    {% endif %}
+</div>
