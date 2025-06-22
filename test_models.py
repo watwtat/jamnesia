@@ -195,21 +195,21 @@ class TestModels(unittest.TestCase):
         actions_data = [
             {
                 "street": "preflop",
-                "player_name": "Alice", 
+                "player_name": "Alice",
                 "action_type": "raise",
                 "amount": 6.0,
                 "pot_size": 9.0,
                 "remaining_stack": 94.0,
-                "action_order": 0
+                "action_order": 0,
             },
             {
                 "street": "preflop",
                 "player_name": "Bob",
-                "action_type": "call", 
+                "action_type": "call",
                 "amount": 4.0,
                 "pot_size": 13.0,
                 "remaining_stack": 96.0,
-                "action_order": 1
+                "action_order": 1,
             },
             {
                 "street": "flop",
@@ -218,7 +218,7 @@ class TestModels(unittest.TestCase):
                 "amount": 8.0,
                 "pot_size": 21.0,
                 "remaining_stack": 86.0,
-                "action_order": 2
+                "action_order": 2,
             },
             {
                 "street": "flop",
@@ -227,8 +227,8 @@ class TestModels(unittest.TestCase):
                 "amount": 0.0,
                 "pot_size": 21.0,
                 "remaining_stack": 96.0,
-                "action_order": 3
-            }
+                "action_order": 3,
+            },
         ]
 
         for action_data in actions_data:
@@ -238,7 +238,9 @@ class TestModels(unittest.TestCase):
         db.session.commit()
 
         # Retrieve actions in order
-        saved_actions = Action.query.filter_by(hand_id=hand.id).order_by(Action.action_order).all()
+        saved_actions = (
+            Action.query.filter_by(hand_id=hand.id).order_by(Action.action_order).all()
+        )
         self.assertEqual(len(saved_actions), 4)
 
         # Verify sequential action order

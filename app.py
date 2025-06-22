@@ -515,7 +515,7 @@ def get_hand_replay(play_id):
 
     # Build replay steps with proper state tracking
     replay_steps = []
-    
+
     # Initialize player state tracking
     player_state = {}
     for p in players:
@@ -528,13 +528,13 @@ def get_hand_replay(play_id):
             "current_bet": 0,
             "total_invested": 0,
             "is_active": True,
-            "has_folded": False
+            "has_folded": False,
         }
-    
+
     current_pot = 0
     current_street = "preflop"
     board_cards = []
-    
+
     # Step 0: Initial game state
     initial_state = {
         "step": 0,
@@ -547,14 +547,14 @@ def get_hand_replay(play_id):
                 "hole_cards": state["hole_cards"],
                 "position": state["position"],
                 "current_bet": state["current_bet"],
-                "is_active": state["is_active"]
+                "is_active": state["is_active"],
             }
             for state in player_state.values()
         ],
         "pot_size": current_pot,
         "board": board_cards.copy(),
         "current_bet": 0,
-        "action": None
+        "action": None,
     }
     replay_steps.append(initial_state)
 
@@ -562,19 +562,19 @@ def get_hand_replay(play_id):
     if len(players) >= 2:
         sb_player = next((p for p in players if p.position == "SB"), None)
         bb_player = next((p for p in players if p.position == "BB"), None)
-        
+
         if sb_player:
             player_state[sb_player.name]["current_stack"] -= hand.small_blind
             player_state[sb_player.name]["current_bet"] = hand.small_blind
             player_state[sb_player.name]["total_invested"] = hand.small_blind
             current_pot += hand.small_blind
-            
+
         if bb_player:
             player_state[bb_player.name]["current_stack"] -= hand.big_blind
             player_state[bb_player.name]["current_bet"] = hand.big_blind
             player_state[bb_player.name]["total_invested"] = hand.big_blind
             current_pot += hand.big_blind
-        
+
         blinds_state = {
             "step": 1,
             "description": f"Blinds posted: {sb_player.name if sb_player else 'SB'} (${hand.small_blind}), {bb_player.name if bb_player else 'BB'} (${hand.big_blind})",
@@ -586,17 +586,14 @@ def get_hand_replay(play_id):
                     "hole_cards": state["hole_cards"],
                     "position": state["position"],
                     "current_bet": state["current_bet"],
-                    "is_active": state["is_active"]
+                    "is_active": state["is_active"],
                 }
                 for state in player_state.values()
             ],
             "pot_size": current_pot,
             "board": board_cards.copy(),
             "current_bet": hand.big_blind,
-            "action": {
-                "type": "blinds",
-                "description": "Blinds posted"
-            }
+            "action": {"type": "blinds", "description": "Blinds posted"},
         }
         replay_steps.append(blinds_state)
 
@@ -614,7 +611,7 @@ def get_hand_replay(play_id):
                     board_cards = board_parts[:4]
                 elif action.street == "river" and len(board_parts) >= 5:
                     board_cards = board_parts[:5]
-            
+
             # Reset current bets for new street
             for state in player_state.values():
                 state["current_bet"] = 0
@@ -627,7 +624,9 @@ def get_hand_replay(play_id):
                 player_state[player_name]["has_folded"] = True
                 player_state[player_name]["current_bet"] = 0
             elif action.action_type in ["bet", "raise"]:
-                additional_bet = action.amount - player_state[player_name]["current_bet"]
+                additional_bet = (
+                    action.amount - player_state[player_name]["current_bet"]
+                )
                 player_state[player_name]["current_stack"] -= additional_bet
                 player_state[player_name]["current_bet"] = action.amount
                 player_state[player_name]["total_invested"] += additional_bet
@@ -643,7 +642,8 @@ def get_hand_replay(play_id):
 
         action_state = {
             "step": current_step,
-            "description": f"{action.player_name} {action.action_type}" + (f" ${action.amount}" if action.amount > 0 else ""),
+            "description": f"{action.player_name} {action.action_type}"
+            + (f" ${action.amount}" if action.amount > 0 else ""),
             "street": action.street,
             "players": [
                 {
@@ -652,35 +652,43 @@ def get_hand_replay(play_id):
                     "hole_cards": state["hole_cards"],
                     "position": state["position"],
                     "current_bet": state["current_bet"],
-                    "is_active": state["is_active"]
+                    "is_active": state["is_active"],
                 }
                 for state in player_state.values()
             ],
             "pot_size": current_pot,
             "board": board_cards.copy(),
-            "current_bet": max(state["current_bet"] for state in player_state.values() if state["is_active"]) if any(state["is_active"] for state in player_state.values()) else 0,
+            "current_bet": max(
+                state["current_bet"]
+                for state in player_state.values()
+                if state["is_active"]
+            )
+            if any(state["is_active"] for state in player_state.values())
+            else 0,
             "action": {
                 "player": action.player_name,
                 "type": action.action_type,
                 "amount": action.amount,
-                "street": action.street
-            }
+                "street": action.street,
+            },
         }
         replay_steps.append(action_state)
         current_step += 1
 
-    return jsonify({
-        "hand_id": hand.play_id,
-        "total_steps": len(replay_steps),
-        "steps": replay_steps,
-        "meta": {
-            "game_type": hand.game_type,
-            "small_blind": hand.small_blind,
-            "big_blind": hand.big_blind,
-            "board": hand.board,
-            "created_at": hand.created_at.isoformat()
+    return jsonify(
+        {
+            "hand_id": hand.play_id,
+            "total_steps": len(replay_steps),
+            "steps": replay_steps,
+            "meta": {
+                "game_type": hand.game_type,
+                "small_blind": hand.small_blind,
+                "big_blind": hand.big_blind,
+                "board": hand.board,
+                "created_at": hand.created_at.isoformat(),
+            },
         }
-    })
+    )
 
 
 if __name__ == "__main__":

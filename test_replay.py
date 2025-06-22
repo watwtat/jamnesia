@@ -43,7 +43,7 @@ class TestReplayFunctionality(unittest.TestCase):
         # Create a sample hand first
         create_response = self.client.post("/api/create-sample")
         self.assertEqual(create_response.status_code, 200)
-        
+
         create_data = json.loads(create_response.data)
         play_id = create_data["play_id"]
 
@@ -52,13 +52,13 @@ class TestReplayFunctionality(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
-        
+
         # Verify response structure
         self.assertIn("hand_id", data)
         self.assertIn("total_steps", data)
         self.assertIn("steps", data)
         self.assertIn("meta", data)
-        
+
         # Verify metadata
         meta = data["meta"]
         self.assertEqual(meta["game_type"], "No Limit Texas Holdem")
@@ -104,10 +104,10 @@ class TestReplayFunctionality(unittest.TestCase):
         blinds_step = steps[1]
         self.assertIn("Blinds posted", blinds_step["description"])
         self.assertEqual(blinds_step["pot_size"], 3.0)  # SB + BB
-        
+
         alice_blinds = next(p for p in blinds_step["players"] if p["name"] == "Alice")
         bob_blinds = next(p for p in blinds_step["players"] if p["name"] == "Bob")
-        
+
         self.assertEqual(alice_blinds["stack"], 99.0)  # 100 - 1 (SB)
         self.assertEqual(alice_blinds["current_bet"], 1.0)
         self.assertEqual(bob_blinds["stack"], 98.0)  # 100 - 2 (BB)
@@ -135,13 +135,19 @@ class TestReplayFunctionality(unittest.TestCase):
         steps = data["steps"]
 
         # Find fold actions
-        fold_steps = [step for step in steps if step.get("action") and step["action"]["type"] == "fold"]
+        fold_steps = [
+            step
+            for step in steps
+            if step.get("action") and step["action"]["type"] == "fold"
+        ]
         self.assertGreater(len(fold_steps), 0)
 
         # Check that folded players become inactive
         for fold_step in fold_steps:
             folded_player_name = fold_step["action"]["player"]
-            folded_player = next(p for p in fold_step["players"] if p["name"] == folded_player_name)
+            folded_player = next(
+                p for p in fold_step["players"] if p["name"] == folded_player_name
+            )
             self.assertFalse(folded_player["is_active"])
 
     def test_replay_board_card_progression(self):
@@ -179,20 +185,22 @@ class TestReplayFunctionality(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Should return HTML content
-        html_content = response.data.decode('utf-8')
-        self.assertIn('hand-replay-container', html_content)
-        self.assertIn('id="play-pause-btn"', html_content)  # Should have play/pause button
-        self.assertIn('HandReplay', html_content)  # Should have JavaScript class
+        html_content = response.data.decode("utf-8")
+        self.assertIn("hand-replay-container", html_content)
+        self.assertIn(
+            'id="play-pause-btn"', html_content
+        )  # Should have play/pause button
+        self.assertIn("HandReplay", html_content)  # Should have JavaScript class
         self.assertIn(play_id, html_content)  # Should contain the play_id
 
     def test_replay_not_found(self):
         """Test replay endpoints with non-existent hand"""
         non_existent_id = "non-existent-hand-id"
-        
+
         # Test replay API endpoint
         response = self.client.get(f"/api/hands/{non_existent_id}/replay")
         self.assertEqual(response.status_code, 404)
-        
+
         data = json.loads(response.data)
         self.assertIn("error", data)
         self.assertEqual(data["error"], "Hand not found")
@@ -200,8 +208,8 @@ class TestReplayFunctionality(unittest.TestCase):
         # Test replay UI endpoint
         ui_response = self.client.get(f"/api/hands/{non_existent_id}/replay-ui")
         self.assertEqual(ui_response.status_code, 404)
-        
-        html_content = ui_response.data.decode('utf-8')
+
+        html_content = ui_response.data.decode("utf-8")
         self.assertIn("Hand not found", html_content)
 
     def test_replay_pot_size_tracking(self):
@@ -241,10 +249,20 @@ class TestReplayFunctionality(unittest.TestCase):
                 {"name": "Player2", "stack": 200.0},
             ],
             "actions": [
-                {"player_name": "Player1", "action_type": "raise", "amount": 4.0, "street": "preflop"},
+                {
+                    "player_name": "Player1",
+                    "action_type": "raise",
+                    "amount": 4.0,
+                    "street": "preflop",
+                },
                 {"player_name": "Player2", "action_type": "call", "street": "preflop"},
                 {"player_name": "Player1", "action_type": "check", "street": "flop"},
-                {"player_name": "Player2", "action_type": "bet", "amount": 6.0, "street": "flop"},
+                {
+                    "player_name": "Player2",
+                    "action_type": "bet",
+                    "amount": 6.0,
+                    "street": "flop",
+                },
                 {"player_name": "Player1", "action_type": "fold", "street": "flop"},
             ],
             "flop": "Ac7d2h",
@@ -259,14 +277,14 @@ class TestReplayFunctionality(unittest.TestCase):
             content_type="application/json",
         )
         self.assertEqual(save_response.status_code, 200)
-        
+
         save_data = json.loads(save_response.data)
         play_id = save_data["play_id"]
 
         # Get replay data
         replay_response = self.client.get(f"/api/hands/{play_id}/replay")
         self.assertEqual(replay_response.status_code, 200)
-        
+
         replay_data = json.loads(replay_response.data)
         steps = replay_data["steps"]
 
@@ -282,7 +300,7 @@ class TestReplayFunctionality(unittest.TestCase):
         # Check street progression
         preflop_steps = [s for s in steps if s["street"] == "preflop"]
         flop_steps = [s for s in steps if s["street"] == "flop"]
-        
+
         self.assertGreater(len(preflop_steps), 0)
         self.assertGreater(len(flop_steps), 0)
 
@@ -308,13 +326,13 @@ class TestReplayFunctionality(unittest.TestCase):
         initial_stacks = {}
         for player in steps[0]["players"]:
             initial_stacks[player["name"]] = player["stack"]
-        
+
         for player_name in ["Alice", "Bob", "Charlie"]:
             prev_stack = initial_stacks[player_name]  # Use actual initial stack
             for step in steps:
                 player = next(p for p in step["players"] if p["name"] == player_name)
                 current_stack = player["stack"]
-                
+
                 # Stack should never increase (chips can only be lost)
                 self.assertLessEqual(current_stack, prev_stack)
                 prev_stack = current_stack
@@ -328,13 +346,33 @@ class TestReplayFunctionality(unittest.TestCase):
                 {"name": "Villain", "stack": 100.0},
             ],
             "actions": [
-                {"player_name": "Hero", "action_type": "raise", "amount": 6.0, "street": "preflop"},
+                {
+                    "player_name": "Hero",
+                    "action_type": "raise",
+                    "amount": 6.0,
+                    "street": "preflop",
+                },
                 {"player_name": "Villain", "action_type": "call", "street": "preflop"},
-                {"player_name": "Hero", "action_type": "bet", "amount": 8.0, "street": "flop"},
-                {"player_name": "Villain", "action_type": "raise", "amount": 20.0, "street": "flop"},
+                {
+                    "player_name": "Hero",
+                    "action_type": "bet",
+                    "amount": 8.0,
+                    "street": "flop",
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "raise",
+                    "amount": 20.0,
+                    "street": "flop",
+                },
                 {"player_name": "Hero", "action_type": "call", "street": "flop"},
                 {"player_name": "Hero", "action_type": "check", "street": "turn"},
-                {"player_name": "Villain", "action_type": "bet", "amount": 30.0, "street": "turn"},
+                {
+                    "player_name": "Villain",
+                    "action_type": "bet",
+                    "amount": 30.0,
+                    "street": "turn",
+                },
                 {"player_name": "Hero", "action_type": "fold", "street": "turn"},
             ],
             "flop": "AsKd7c",
@@ -403,18 +441,18 @@ class TestReplayIntegration(unittest.TestCase):
         # Test regular details endpoint
         details_response = self.client.get(f"/api/hands/{play_id}")
         self.assertEqual(details_response.status_code, 200)
-        
+
         details_data = json.loads(details_response.data)
-        
+
         # Test replay endpoint
         replay_response = self.client.get(f"/api/hands/{play_id}/replay")
         self.assertEqual(replay_response.status_code, 200)
-        
+
         replay_data = json.loads(replay_response.data)
 
         # Both should reference the same hand
         self.assertEqual(details_data["hand"]["play_id"], replay_data["hand_id"])
-        
+
         # Player count should match
         self.assertEqual(len(details_data["players"]), 3)
         self.assertEqual(len(replay_data["steps"][0]["players"]), 3)
@@ -428,25 +466,24 @@ class TestReplayIntegration(unittest.TestCase):
 
         # Test HTMX details endpoint
         details_response = self.client.get(
-            f"/api/hands/{play_id}/details",
-            headers={"HX-Request": "true"}
+            f"/api/hands/{play_id}/details", headers={"HX-Request": "true"}
         )
         self.assertEqual(details_response.status_code, 200)
-        
+
         # Test replay UI endpoint
         replay_ui_response = self.client.get(f"/api/hands/{play_id}/replay-ui")
         self.assertEqual(replay_ui_response.status_code, 200)
 
         # Both should return HTML
-        details_html = details_response.data.decode('utf-8')
-        replay_html = replay_ui_response.data.decode('utf-8')
-        
-        self.assertIn('<div', details_html)
-        self.assertIn('<div', replay_html)
-        
+        details_html = details_response.data.decode("utf-8")
+        replay_html = replay_ui_response.data.decode("utf-8")
+
+        self.assertIn("<div", details_html)
+        self.assertIn("<div", replay_html)
+
         # Replay should have specific replay elements
-        self.assertIn('hand-replay-container', replay_html)
-        self.assertIn('play-pause-btn', replay_html)
+        self.assertIn("hand-replay-container", replay_html)
+        self.assertIn("play-pause-btn", replay_html)
 
     def test_full_workflow_with_replay(self):
         """Test complete workflow: create hand -> list -> details -> replay"""

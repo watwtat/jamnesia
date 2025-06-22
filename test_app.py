@@ -318,13 +318,13 @@ class TestApp(unittest.TestCase):
         response = self.client.get(f"/api/hands/{play_id}/details")
 
         self.assertEqual(response.status_code, 200)
-        
+
         # Should return HTML content
-        html_content = response.data.decode('utf-8')
-        self.assertIn('<div', html_content)
-        self.assertIn('Hand Information', html_content)
-        self.assertIn('Players', html_content)
-        self.assertIn('Actions', html_content)
+        html_content = response.data.decode("utf-8")
+        self.assertIn("<div", html_content)
+        self.assertIn("Hand Information", html_content)
+        self.assertIn("Players", html_content)
+        self.assertIn("Actions", html_content)
         self.assertIn(play_id, html_content)
 
     def test_get_hand_details_html_not_found(self):
@@ -332,8 +332,8 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/api/hands/non-existent-id/details")
 
         self.assertEqual(response.status_code, 404)
-        
-        html_content = response.data.decode('utf-8')
+
+        html_content = response.data.decode("utf-8")
         self.assertIn("Hand not found", html_content)
 
     def test_save_hand_with_custom_play_id(self):
