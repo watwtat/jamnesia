@@ -244,18 +244,21 @@ class HandReplay {
     
     updateBoardCards(board) {
         this.boardCards.innerHTML = '';
-        board.forEach(card => {
-            const cardElement = document.createElement('div');
-            cardElement.className = 'bg-white border-2 border-gray-300 rounded-lg w-12 h-16 flex items-center justify-center font-bold text-sm';
-            cardElement.textContent = card;
-            this.boardCards.appendChild(cardElement);
-        });
         
-        // Add empty card slots
-        for (let i = board.length; i < 5; i++) {
+        // Always show 5 card slots
+        for (let i = 0; i < 5; i++) {
             const cardElement = document.createElement('div');
-            cardElement.className = 'bg-gray-200 border-2 border-gray-300 rounded-lg w-12 h-16 flex items-center justify-center text-gray-400';
-            cardElement.textContent = '?';
+            
+            if (i < board.length && board[i]) {
+                // Show actual card
+                cardElement.className = 'bg-white border-2 border-gray-800 rounded-lg w-12 h-16 flex items-center justify-center font-bold text-sm shadow-md';
+                cardElement.textContent = board[i];
+            } else {
+                // Show empty slot
+                cardElement.className = 'bg-gray-200 border-2 border-gray-300 rounded-lg w-12 h-16 flex items-center justify-center text-gray-400 text-xs';
+                cardElement.textContent = '?';
+            }
+            
             this.boardCards.appendChild(cardElement);
         }
     }

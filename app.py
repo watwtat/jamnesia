@@ -501,6 +501,18 @@ def get_hand_replay_ui(play_id):
     return render_template("hand_replay.html", hand=hand)
 
 
+@app.route("/api/players/names")
+def get_player_names():
+    """Get list of unique player names for autocomplete"""
+    try:
+        # Get unique player names from database
+        player_names = db.session.query(Player.name).distinct().all()
+        names = [name[0] for name in player_names if name[0]]  # Extract string from tuple
+        return jsonify(sorted(names))  # Return sorted list
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/hands/<play_id>/replay")
 def get_hand_replay(play_id):
     """Get hand replay data with step-by-step progression"""
@@ -604,7 +616,19 @@ def get_hand_replay(play_id):
         if action.street != current_street:
             current_street = action.street
             if hand.board:
-                board_parts = hand.board.split()
+                # Parse board cards: "AhKd5c" -> ["Ah", "Kd", "5c"]
+                board_str = hand.board.replace(" ", "")  # Remove any spaces
+                board_parts = []
+                
+                # Parse pairs of characters as cards
+                i = 0
+                while i < len(board_str) - 1:
+                    card = board_str[i:i+2]
+                    if len(card) == 2:  # Valid card format
+                        board_parts.append(card)
+                    i += 2
+                
+                # Set board cards based on street
                 if action.street == "flop" and len(board_parts) >= 3:
                     board_cards = board_parts[:3]
                 elif action.street == "turn" and len(board_parts) >= 4:

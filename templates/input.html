@@ -1,11 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-6xl mx-auto">
     <div class="card">
         <h2 class="text-2xl font-bold mb-6">Poker Hand Input</h2>
         
-        <form id="hand-form" class="space-y-6">
+        <!-- Status and Help -->
+        <div id="validation-status" class="mb-6 hidden">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Input Status</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <ul id="validation-messages" class="list-disc list-inside space-y-1">
+                                <!-- Validation messages will appear here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form id="hand-form" class="space-y-8">
             <!-- Game Settings -->
             <div class="grid md:grid-cols-2 gap-4">
                 <div>
@@ -19,45 +40,92 @@
             </div>
             
             <!-- Player Settings -->
-            <div>
-                <h3 class="text-lg font-bold mb-4">Player Settings</h3>
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                    Players
+                </h3>
                 <div id="players-container">
-                    <div class="player-row grid md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Player Name</label>
-                            <input type="text" name="player_name_0" placeholder="Alice" class="form-input" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Stack</label>
-                            <input type="number" name="player_stack_0" value="100" step="0.5" class="form-input" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Hole Cards</label>
-                            <input type="text" name="player_cards_0" placeholder="AsKh" maxlength="4" class="form-input">
-                        </div>
-                        <div class="flex items-end">
-                            <button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>
+                    <div class="player-row bg-white rounded-lg p-4 mb-4 border border-gray-200">
+                        <div class="grid md:grid-cols-5 gap-4">
+                            <div class="relative">
+                                <label class="block text-sm font-medium mb-2">Player Name</label>
+                                <input type="text" name="player_name_0" placeholder="Enter name" class="form-input player-name-input" required autocomplete="off">
+                                <div class="autocomplete-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Position</label>
+                                <select name="player_position_0" class="form-input">
+                                    <option value="SB">Small Blind</option>
+                                    <option value="BB">Big Blind</option>
+                                    <option value="UTG">UTG</option>
+                                    <option value="UTG1">UTG+1</option>
+                                    <option value="MP">Middle Position</option>
+                                    <option value="LJ">Lojack</option>
+                                    <option value="HJ">Hijack</option>
+                                    <option value="CO">Cutoff</option>
+                                    <option value="BTN">Button</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Stack</label>
+                                <input type="number" name="player_stack_0" value="100" step="0.5" class="form-input player-stack-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Hole Cards</label>
+                                <div class="flex space-x-1">
+                                    <input type="text" name="player_cards_0" placeholder="AsKh" maxlength="4" class="form-input card-input text-center font-mono" onchange="validateCard(this)">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this)">🃏</button>
+                                </div>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="addPlayer()">Add Player</button>
+                <button type="button" class="btn btn-primary" onclick="addPlayer()">
+                    <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Player
+                </button>
             </div>
             
             <!-- Board Cards -->
-            <div>
-                <h3 class="text-lg font-bold mb-4">Board Cards</h3>
-                <div class="grid md:grid-cols-3 gap-4">
+            <div class="bg-green-50 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                    Board Cards
+                </h3>
+                <div class="grid md:grid-cols-3 gap-6">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Flop</label>
-                        <input type="text" name="flop" placeholder="AhKd5c" maxlength="6" class="form-input">
+                        <label class="block text-sm font-medium mb-2">Flop (3 cards)</label>
+                        <div class="flex space-x-1">
+                            <input type="text" name="flop" placeholder="AhKd5c" maxlength="6" class="form-input card-input font-mono text-center" onchange="validateCard(this)">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this, 3)">🃏</button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Example: AhKd5c</div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">Turn</label>
-                        <input type="text" name="turn" placeholder="9s" maxlength="2" class="form-input">
+                        <label class="block text-sm font-medium mb-2">Turn (1 card)</label>
+                        <div class="flex space-x-1">
+                            <input type="text" name="turn" placeholder="9s" maxlength="2" class="form-input card-input font-mono text-center" onchange="validateCard(this)">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this, 1)">🃏</button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Example: 9s</div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">River</label>
-                        <input type="text" name="river" placeholder="3d" maxlength="2" class="form-input">
+                        <label class="block text-sm font-medium mb-2">River (1 card)</label>
+                        <div class="flex space-x-1">
+                            <input type="text" name="river" placeholder="3d" maxlength="2" class="form-input card-input font-mono text-center" onchange="validateCard(this)">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this, 1)">🃏</button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Example: 3d</div>
                     </div>
                 </div>
             </div>
@@ -119,25 +187,50 @@ let actionCount = 1;
 function addPlayer() {
     const container = document.getElementById('players-container');
     const newRow = document.createElement('div');
-    newRow.className = 'player-row grid md:grid-cols-4 gap-4 mb-4';
+    newRow.className = 'player-row bg-white rounded-lg p-4 mb-4 border border-gray-200';
     newRow.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium mb-2">Player Name</label>
-            <input type="text" name="player_name_${playerCount}" class="form-input" required>
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-2">Stack</label>
-            <input type="number" name="player_stack_${playerCount}" value="100" step="0.5" class="form-input" required>
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-2">Hole Cards</label>
-            <input type="text" name="player_cards_${playerCount}" maxlength="4" class="form-input">
-        </div>
-        <div class="flex items-end">
-            <button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>
+        <div class="grid md:grid-cols-5 gap-4">
+            <div class="relative">
+                <label class="block text-sm font-medium mb-2">Player Name</label>
+                <input type="text" name="player_name_${playerCount}" placeholder="Enter name" class="form-input player-name-input" required autocomplete="off">
+                <div class="autocomplete-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-40 overflow-y-auto"></div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Position</label>
+                <select name="player_position_${playerCount}" class="form-input">
+                    <option value="SB">Small Blind</option>
+                    <option value="BB">Big Blind</option>
+                    <option value="UTG">UTG</option>
+                    <option value="UTG1">UTG+1</option>
+                    <option value="MP">Middle Position</option>
+                    <option value="LJ">Lojack</option>
+                    <option value="HJ">Hijack</option>
+                    <option value="CO">Cutoff</option>
+                    <option value="BTN">Button</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Stack</label>
+                <input type="number" name="player_stack_${playerCount}" value="100" step="0.5" class="form-input player-stack-input" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Hole Cards</label>
+                <div class="flex space-x-1">
+                    <input type="text" name="player_cards_${playerCount}" placeholder="AsKh" maxlength="4" class="form-input card-input text-center font-mono" onchange="validateCard(this)">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this)">🃏</button>
+                </div>
+            </div>
+            <div class="flex items-end">
+                <button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>
+            </div>
         </div>
     `;
     container.appendChild(newRow);
+    
+    // Setup autocomplete for the new player input
+    const newPlayerInput = newRow.querySelector('.player-name-input');
+    setupAutocomplete(newPlayerInput);
+    
     playerCount++;
 }
 
@@ -194,6 +287,278 @@ function removeAction(button) {
         button.closest('.action-row').remove();
     }
 }
+
+// Autocomplete functionality
+let playerNames = [];
+
+async function loadPlayerNames() {
+    try {
+        const response = await fetch('/api/players/names');
+        playerNames = await response.json();
+    } catch (error) {
+        console.error('Failed to load player names:', error);
+    }
+}
+
+function setupAutocomplete(input) {
+    const dropdown = input.nextElementSibling;
+    
+    input.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        dropdown.innerHTML = '';
+        
+        if (value.length < 1) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+        
+        const matches = playerNames.filter(name => 
+            name.toLowerCase().includes(value)
+        ).slice(0, 5);
+        
+        if (matches.length === 0) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+        
+        matches.forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+            item.textContent = name;
+            item.addEventListener('click', function() {
+                input.value = name;
+                dropdown.classList.add('hidden');
+                validateForm();
+            });
+            dropdown.appendChild(item);
+        });
+        
+        dropdown.classList.remove('hidden');
+    });
+    
+    input.addEventListener('blur', function() {
+        setTimeout(() => dropdown.classList.add('hidden'), 150);
+    });
+    
+    input.addEventListener('focus', function() {
+        if (this.value.length > 0) {
+            this.dispatchEvent(new Event('input'));
+        }
+    });
+}
+
+// Card validation
+function validateCard(input) {
+    const value = input.value.toUpperCase();
+    const cardPattern = /^([AKQJT98765432]{1,2}[SHDC]{1,2})+$/;
+    
+    if (value && !cardPattern.test(value)) {
+        input.classList.add('border-red-500');
+        showValidationMessage(`Invalid card format: ${value}. Use format like "AsKh" or "AhKd5c"`, 'error');
+    } else {
+        input.classList.remove('border-red-500');
+        input.value = value;
+    }
+    validateForm();
+}
+
+// Card picker functionality
+function showCardPicker(button, numCards = 2) {
+    const suits = ['h', 'd', 'c', 's'];
+    const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    
+    const content = document.createElement('div');
+    content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
+    
+    content.innerHTML = `
+        <h3 class="text-lg font-bold mb-4">Select ${numCards === 1 ? 'Card' : 'Cards'}</h3>
+        <div class="grid grid-cols-4 gap-2 mb-4" id="card-grid">
+            ${ranks.map(rank => 
+                suits.map(suit => 
+                    `<button type="button" class="card-btn p-2 border rounded hover:bg-gray-100 text-sm" data-card="${rank}${suit}">${rank}${suit}</button>`
+                ).join('')
+            ).join('')}
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Selected Cards:</label>
+            <input type="text" id="selected-cards" class="form-input" readonly>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button type="button" class="btn btn-secondary" onclick="closeCardPicker()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="applySelectedCards()">Apply</button>
+        </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Store reference for later use
+    window.currentCardInput = button.previousElementSibling;
+    window.currentModal = modal;
+    window.selectedCards = [];
+    window.maxCards = numCards;
+    
+    // Add card selection logic
+    content.querySelectorAll('.card-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const card = this.dataset.card;
+            
+            if (this.classList.contains('bg-blue-500')) {
+                // Deselect
+                this.classList.remove('bg-blue-500', 'text-white');
+                window.selectedCards = window.selectedCards.filter(c => c !== card);
+            } else if (window.selectedCards.length < window.maxCards) {
+                // Select
+                this.classList.add('bg-blue-500', 'text-white');
+                window.selectedCards.push(card);
+            }
+            
+            document.getElementById('selected-cards').value = window.selectedCards.join('');
+        });
+    });
+}
+
+function closeCardPicker() {
+    if (window.currentModal) {
+        document.body.removeChild(window.currentModal);
+        window.currentModal = null;
+        window.currentCardInput = null;
+        window.selectedCards = [];
+    }
+}
+
+function applySelectedCards() {
+    if (window.currentCardInput && window.selectedCards) {
+        window.currentCardInput.value = window.selectedCards.join('');
+        validateCard(window.currentCardInput);
+    }
+    closeCardPicker();
+}
+
+// Action calculation
+function calculateAction(actionRow) {
+    const playerName = actionRow.querySelector('[name^="action_player_"]').value;
+    const actionType = actionRow.querySelector('[name^="action_type_"]').value;
+    const amountInput = actionRow.querySelector('[name^="action_amount_"]');
+    const potSizeInput = actionRow.querySelector('[name^="action_pot_size_"]');
+    const remainingStackInput = actionRow.querySelector('[name^="action_remaining_stack_"]');
+    
+    if (!playerName) return;
+    
+    // Find player's current stack
+    const playerInputs = document.querySelectorAll('.player-name-input');
+    let playerStack = 0;
+    
+    for (const input of playerInputs) {
+        if (input.value === playerName) {
+            const stackInput = input.closest('.player-row').querySelector('.player-stack-input');
+            playerStack = parseFloat(stackInput.value) || 0;
+            break;
+        }
+    }
+    
+    const amount = parseFloat(amountInput.value) || 0;
+    
+    // Calculate remaining stack
+    if (actionType && (actionType === 'bet' || actionType === 'raise' || actionType === 'call')) {
+        remainingStackInput.value = Math.max(0, playerStack - amount);
+    } else {
+        remainingStackInput.value = playerStack;
+    }
+    
+    // Calculate pot size (simplified - just add current bet amount to existing pot)
+    const previousActions = Array.from(document.querySelectorAll('.action-row'))
+        .slice(0, Array.from(document.querySelectorAll('.action-row')).indexOf(actionRow));
+    
+    let currentPot = parseFloat(document.querySelector('[name="small_blind"]').value || 0) + 
+                    parseFloat(document.querySelector('[name="big_blind"]').value || 0);
+    
+    previousActions.forEach(row => {
+        const prevAmount = parseFloat(row.querySelector('[name^="action_amount_"]').value || 0);
+        const prevType = row.querySelector('[name^="action_type_"]').value;
+        if (prevType && (prevType === 'bet' || prevType === 'raise' || prevType === 'call')) {
+            currentPot += prevAmount;
+        }
+    });
+    
+    if (actionType && (actionType === 'bet' || actionType === 'raise' || actionType === 'call')) {
+        currentPot += amount;
+    }
+    
+    potSizeInput.value = currentPot;
+}
+
+// Form validation
+function validateForm() {
+    const messages = [];
+    const players = document.querySelectorAll('.player-name-input');
+    const playerNames = Array.from(players).map(p => p.value).filter(name => name);
+    
+    // Check for duplicate player names
+    const duplicates = playerNames.filter((name, index) => playerNames.indexOf(name) !== index);
+    if (duplicates.length > 0) {
+        messages.push(`Duplicate player names: ${duplicates.join(', ')}`);
+    }
+    
+    // Check minimum players
+    if (playerNames.length < 2) {
+        messages.push('At least 2 players required');
+    }
+    
+    showValidationMessages(messages);
+}
+
+function showValidationMessages(messages) {
+    const statusDiv = document.getElementById('validation-status');
+    const messagesList = document.getElementById('validation-messages');
+    
+    if (messages.length === 0) {
+        statusDiv.classList.add('hidden');
+        return;
+    }
+    
+    messagesList.innerHTML = '';
+    messages.forEach(msg => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        messagesList.appendChild(li);
+    });
+    
+    statusDiv.classList.remove('hidden');
+}
+
+function showValidationMessage(message, type = 'info') {
+    showValidationMessages([message]);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    loadPlayerNames();
+    
+    // Setup autocomplete for initial player input
+    const initialPlayerInput = document.querySelector('.player-name-input');
+    if (initialPlayerInput) {
+        setupAutocomplete(initialPlayerInput);
+    }
+    
+    // Setup action calculation
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('[name^="action_type_"], [name^="action_amount_"]')) {
+            const actionRow = e.target.closest('.action-row');
+            if (actionRow) {
+                calculateAction(actionRow);
+            }
+        }
+        
+        if (e.target.matches('.player-name-input, .player-stack-input')) {
+            validateForm();
+        }
+    });
+});
 
 document.getElementById('hand-form').addEventListener('submit', function(e) {
     e.preventDefault();
