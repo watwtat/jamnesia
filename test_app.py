@@ -83,12 +83,13 @@ class TestApp(unittest.TestCase):
         """Test basic hand saving functionality"""
         test_data = {
             "players": [
-                {"name": "Alice", "stack": 100.0},
-                {"name": "Bob", "stack": 150.0},
+                {"name": "Alice", "stack": 100.0},  # SB
+                {"name": "Bob", "stack": 150.0},    # BB
             ],
             "actions": [
-                {"player_name": "Alice", "action_type": "bet", "amount": 5.0},
-                {"player_name": "Bob", "action_type": "call"},
+                # Preflop: SB (Alice) acts first in heads-up
+                {"player_name": "Alice", "action_type": "bet", "amount": 5.0, "street": "preflop"},
+                {"player_name": "Bob", "action_type": "call", "street": "preflop"},
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
@@ -119,12 +120,13 @@ class TestApp(unittest.TestCase):
         """Test hand saving with hole cards"""
         test_data = {
             "players": [
-                {"name": "Alice", "stack": 100.0},
-                {"name": "Bob", "stack": 100.0},
+                {"name": "Alice", "stack": 100.0},  # SB
+                {"name": "Bob", "stack": 100.0},    # BB
             ],
             "actions": [
-                {"player_name": "Alice", "action_type": "check"},
-                {"player_name": "Bob", "action_type": "check"},
+                # Preflop: SB (Alice) acts first in heads-up
+                {"player_name": "Alice", "action_type": "call", "street": "preflop"},
+                {"player_name": "Bob", "action_type": "check", "street": "preflop"},
             ],
             "hole_cards": {"Alice": "AsKh", "Bob": "QdQc"},
             "small_blind": 1.0,
@@ -149,12 +151,13 @@ class TestApp(unittest.TestCase):
         """Test hand saving with board cards"""
         test_data = {
             "players": [
-                {"name": "Alice", "stack": 100.0},
-                {"name": "Bob", "stack": 100.0},
+                {"name": "Alice", "stack": 100.0},  # SB
+                {"name": "Bob", "stack": 100.0},    # BB
             ],
             "actions": [
-                {"player_name": "Alice", "action_type": "bet", "amount": 5.0},
-                {"player_name": "Bob", "action_type": "fold"},
+                # Preflop: SB (Alice) acts first in heads-up
+                {"player_name": "Alice", "action_type": "bet", "amount": 5.0, "street": "preflop"},
+                {"player_name": "Bob", "action_type": "fold", "street": "preflop"},
             ],
             "flop": "AhKd5c",
             "turn": "9s",

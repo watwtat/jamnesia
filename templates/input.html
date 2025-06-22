@@ -137,7 +137,9 @@
                     <div class="action-row grid md:grid-cols-6 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Player</label>
-                            <input type="text" name="action_player_0" placeholder="Alice" class="form-input" required>
+                            <select name="action_player_0" class="form-input action-player-select" required>
+                                <option value="">Select player</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">Action</label>
@@ -231,6 +233,9 @@ function addPlayer() {
     const newPlayerInput = newRow.querySelector('.player-name-input');
     setupAutocomplete(newPlayerInput);
     
+    // Update action player dropdowns
+    updateActionPlayerDropdowns();
+    
     playerCount++;
 }
 
@@ -238,6 +243,8 @@ function removePlayer(button) {
     const playerRows = document.querySelectorAll('.player-row');
     if (playerRows.length > 1) {
         button.closest('.player-row').remove();
+        updateActionPlayerDropdowns(); // Update dropdowns when player is removed
+        validateForm();
     }
 }
 
@@ -248,7 +255,9 @@ function addAction() {
     newRow.innerHTML = `
         <div>
             <label class="block text-sm font-medium mb-2">Player</label>
-            <input type="text" name="action_player_${actionCount}" class="form-input" required>
+            <select name="action_player_${actionCount}" class="form-input action-player-select" required>
+                <option value="">Select player</option>
+            </select>
         </div>
         <div>
             <label class="block text-sm font-medium mb-2">Action</label>
@@ -278,6 +287,11 @@ function addAction() {
         </div>
     `;
     container.appendChild(newRow);
+    
+    // Populate the new player dropdown
+    const newSelect = newRow.querySelector('.action-player-select');
+    updateActionPlayerDropdowns();
+    
     actionCount++;
 }
 
@@ -620,6 +634,39 @@ function showValidationMessage(message, type = 'info') {
     showValidationMessages([message]);
 }
 
+// Update action player dropdowns with current players
+function updateActionPlayerDropdowns() {
+    const playerNames = [];
+    
+    // Get current player names from the player inputs
+    document.querySelectorAll('.player-name-input').forEach(input => {
+        if (input.value && input.value.trim()) {
+            playerNames.push(input.value.trim());
+        }
+    });
+    
+    // Update all action player dropdowns
+    document.querySelectorAll('.action-player-select').forEach(select => {
+        const currentValue = select.value;
+        
+        // Clear existing options except the first one
+        select.innerHTML = '<option value="">Select player</option>';
+        
+        // Add player options
+        playerNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+        
+        // Restore previous selection if it still exists
+        if (currentValue && playerNames.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    });
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     loadPlayerNames();
@@ -629,6 +676,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (initialPlayerInput) {
         setupAutocomplete(initialPlayerInput);
     }
+    
+    // Update action player dropdowns when players change
+    updateActionPlayerDropdowns();
     
     // Setup action calculation
     document.addEventListener('change', function(e) {
@@ -641,6 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (e.target.matches('.player-name-input, .player-stack-input')) {
             validateForm();
+            updateActionPlayerDropdowns(); // Update dropdowns when player names change
         }
     });
 });

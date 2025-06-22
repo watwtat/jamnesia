@@ -7,6 +7,76 @@ from flask_sqlalchemy import SQLAlchemy
 from models import Action, Hand, Player, Position, db
 from poker_engine import PokerHandBuilder
 
+
+def process_hand_actions(players_data, actions, small_blind, big_blind):
+    """Process hand actions and return processed actions with correct amounts"""
+    player_stacks = {p["name"]: p["stack"] for p in players_data}
+    current_bet = big_blind  # Start with big blind as current bet
+    player_bets = {p["name"]: 0 for p in players_data}
+    processed_actions = []
+
+    # Set initial blinds
+    if len(players_data) >= 2:
+        player_bets[players_data[0]["name"]] = small_blind
+        player_bets[players_data[1]["name"]] = big_blind
+
+    current_street = "preflop"
+    for action in actions:
+        player_name = action["player_name"]
+        action_type = action["action_type"]
+        amount = action.get("amount", 0)
+        street = action.get("street", "preflop")
+
+        # Reset bets when street changes
+        if street != current_street:
+            current_street = street
+            current_bet = 0  # Reset current bet for new street
+            for p_name in player_bets:
+                player_bets[p_name] = 0  # Reset all player bets
+
+        # Validate player exists
+        if player_name not in player_stacks:
+            raise ValueError(f"Player {player_name} not found")
+
+        # Calculate actual action amount and validate
+        if action_type == "call":
+            # Calculate call amount (difference between current bet and player's current bet)
+            call_amount = max(0, current_bet - player_bets[player_name])
+            # Ensure player has enough chips
+            available_chips = player_stacks[player_name] - player_bets[player_name]
+            actual_amount = min(call_amount, available_chips)
+            player_bets[player_name] += actual_amount
+            # Store processed action with correct amount and street
+            processed_action = action.copy()
+            processed_action["amount"] = actual_amount
+            processed_action["street"] = street
+            processed_actions.append(processed_action)
+
+        elif action_type in ["bet", "raise"]:
+            # For raise, the amount is the total bet, not additional
+            total_bet = amount
+            additional_amount = total_bet - player_bets[player_name]
+
+            # Validate bet/raise amount doesn't exceed stack
+            available_chips = player_stacks[player_name] - player_bets[player_name]
+            if additional_amount > available_chips:
+                raise ValueError(
+                    f"{player_name} cannot bet ${total_bet} (only ${available_chips} additional available)"
+                )
+
+            player_bets[player_name] = total_bet
+            current_bet = max(current_bet, total_bet)
+            processed_action = action.copy()
+            processed_action["street"] = street
+            processed_actions.append(processed_action)
+
+        else:  # fold, check
+            processed_action = action.copy()
+            processed_action["street"] = street
+            processed_actions.append(processed_action)
+
+    return processed_actions
+
 app = Flask(__name__)
 
 # データベース設定
@@ -73,73 +143,20 @@ def save_hand():
         if "hole_cards" in data:
             builder.deal_hole_cards(data["hole_cards"])
 
-        # Validate and process actions
-        player_stacks = {p["name"]: p["stack"] for p in players_data}
-        current_bet = data.get("big_blind", 2.0)  # Start with big blind as current bet
-        player_bets = {
-            p["name"]: 0 for p in players_data
-        }  # Track total bets per player
-        processed_actions = []  # Store processed actions with correct amounts
+        # Process actions using shared logic
+        try:
+            processed_actions = process_hand_actions(
+                players_data, 
+                data["actions"], 
+                data.get("small_blind", 1.0), 
+                data.get("big_blind", 2.0)
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
-        # Set initial blinds
-        if len(players_data) >= 2:
-            player_bets[players_data[0]["name"]] = data.get("small_blind", 1.0)
-            player_bets[players_data[1]["name"]] = data.get("big_blind", 2.0)
-
-        for action in data["actions"]:
-            player_name = action["player_name"]
-            action_type = action["action_type"]
-            amount = action.get("amount", 0)
-            street = action.get("street", "preflop")  # Get street from action data
-
-            # Validate player exists
-            if player_name not in player_stacks:
-                return jsonify({"error": f"Player {player_name} not found"}), 400
-
-            # Calculate actual action amount and validate
-            if action_type == "call":
-                # Calculate call amount (difference between current bet and player's current bet)
-                call_amount = max(0, current_bet - player_bets[player_name])
-                # Ensure player has enough chips
-                available_chips = player_stacks[player_name] - player_bets[player_name]
-                actual_amount = min(call_amount, available_chips)
-                player_bets[player_name] += actual_amount
-                builder.add_action(player_name, action_type, actual_amount)
-                # Store processed action with correct amount and street
-                processed_action = action.copy()
-                processed_action["amount"] = actual_amount
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
-
-            elif action_type in ["bet", "raise"]:
-                # For raise, the amount is the total bet, not additional
-                total_bet = amount
-                additional_amount = total_bet - player_bets[player_name]
-
-                # Validate bet/raise amount doesn't exceed stack
-                available_chips = player_stacks[player_name] - player_bets[player_name]
-                if additional_amount > available_chips:
-                    return (
-                        jsonify(
-                            {
-                                "error": f"{player_name} cannot bet ${total_bet} (only ${available_chips} additional available)"
-                            }
-                        ),
-                        400,
-                    )
-
-                player_bets[player_name] = total_bet
-                current_bet = max(current_bet, total_bet)
-                builder.add_action(player_name, action_type, amount)
-                processed_action = action.copy()
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
-
-            else:  # fold, check
-                builder.add_action(player_name, action_type, amount)
-                processed_action = action.copy()
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
+        # Add actions to builder
+        for action in processed_actions:
+            builder.add_action(action["player_name"], action["action_type"], action.get("amount", 0))
 
         # Set board cards
         if "flop" in data:
@@ -217,47 +234,66 @@ def create_sample():
         sample_hand_data = {
             "play_id": str(uuid.uuid4()),
             "players": [
-                {"name": "Alice", "stack": 100.0},
-                {"name": "Bob", "stack": 100.0},
-                {"name": "Charlie", "stack": 150.0},
+                {"name": "Alice", "stack": 100.0},  # SB
+                {"name": "Bob", "stack": 100.0},    # BB  
+                {"name": "Charlie", "stack": 150.0}, # BTN/UTG
             ],
             "actions": [
+                # Preflop: UTG (Charlie) acts first after blinds
                 {
                     "player_name": "Charlie",
-                    "action_type": "fold",
-                    "street": "preflop",
-                    "pot_size": 3.0,
-                    "remaining_stack": 150.0,
-                },
-                {
-                    "player_name": "Alice",
                     "action_type": "raise",
                     "amount": 6.0,
                     "street": "preflop",
                     "pot_size": 9.0,
+                    "remaining_stack": 144.0,
+                },
+                {
+                    "player_name": "Alice",
+                    "action_type": "call",
+                    "amount": 5.0,  # SB already paid $1, need $5 more to call $6
+                    "street": "preflop",
+                    "pot_size": 14.0,
                     "remaining_stack": 94.0,
                 },
                 {
                     "player_name": "Bob",
                     "action_type": "call",
+                    "amount": 4.0,  # BB already paid $2, need $4 more to call $6
                     "street": "preflop",
-                    "pot_size": 15.0,
+                    "pot_size": 18.0,
                     "remaining_stack": 94.0,
                 },
+                # Flop: SB (Alice) acts first postflop
                 {
                     "player_name": "Alice",
-                    "action_type": "bet",
-                    "amount": 8.0,
+                    "action_type": "check",
                     "street": "flop",
-                    "pot_size": 23.0,
-                    "remaining_stack": 86.0,
+                    "pot_size": 18.0,
+                    "remaining_stack": 94.0,
                 },
                 {
                     "player_name": "Bob",
+                    "action_type": "bet",
+                    "amount": 12.0,
+                    "street": "flop",
+                    "pot_size": 30.0,
+                    "remaining_stack": 82.0,
+                },
+                {
+                    "player_name": "Charlie",
                     "action_type": "fold",
                     "street": "flop",
-                    "pot_size": 23.0,
-                    "remaining_stack": 94.0,
+                    "pot_size": 30.0,
+                    "remaining_stack": 144.0,
+                },
+                {
+                    "player_name": "Alice",
+                    "action_type": "call",
+                    "amount": 12.0,  # Call Bob's $12 bet
+                    "street": "flop",
+                    "pot_size": 42.0,
+                    "remaining_stack": 82.0,
                 },
             ],
             "small_blind": 1.0,
@@ -290,60 +326,20 @@ def create_sample():
         if "hole_cards" in data:
             builder.deal_hole_cards(data["hole_cards"])
 
-        # Validate and process actions (same logic as save_hand)
-        player_stacks = {p["name"]: p["stack"] for p in players_data}
-        current_bet = data.get("big_blind", 2.0)
-        player_bets = {p["name"]: 0 for p in players_data}
-        processed_actions = []
+        # Process actions using shared logic
+        try:
+            processed_actions = process_hand_actions(
+                players_data,
+                data["actions"],
+                data.get("small_blind", 1.0),
+                data.get("big_blind", 2.0)
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 500
 
-        # Set initial blinds
-        if len(players_data) >= 2:
-            player_bets[players_data[0]["name"]] = data.get("small_blind", 1.0)
-            player_bets[players_data[1]["name"]] = data.get("big_blind", 2.0)
-
-        for action in data["actions"]:
-            player_name = action["player_name"]
-            action_type = action["action_type"]
-            amount = action.get("amount", 0)
-            street = action.get("street", "preflop")  # Get street from action data
-
-            if action_type == "call":
-                call_amount = max(0, current_bet - player_bets[player_name])
-                available_chips = player_stacks[player_name] - player_bets[player_name]
-                actual_amount = min(call_amount, available_chips)
-                player_bets[player_name] += actual_amount
-                builder.add_action(player_name, action_type, actual_amount)
-                processed_action = action.copy()
-                processed_action["amount"] = actual_amount
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
-
-            elif action_type in ["bet", "raise"]:
-                total_bet = amount
-                additional_amount = total_bet - player_bets[player_name]
-                available_chips = player_stacks[player_name] - player_bets[player_name]
-                if additional_amount > available_chips:
-                    return (
-                        jsonify(
-                            {
-                                "error": f"{player_name} cannot bet ${total_bet} (only ${available_chips} additional available)"
-                            }
-                        ),
-                        400,
-                    )
-
-                player_bets[player_name] = total_bet
-                current_bet = max(current_bet, total_bet)
-                builder.add_action(player_name, action_type, amount)
-                processed_action = action.copy()
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
-
-            else:  # fold, check
-                builder.add_action(player_name, action_type, amount)
-                processed_action = action.copy()
-                processed_action["street"] = street
-                processed_actions.append(processed_action)
+        # Add actions to builder
+        for action in processed_actions:
+            builder.add_action(action["player_name"], action["action_type"], action.get("amount", 0))
 
         # Set board cards
         if "flop" in data:

@@ -245,10 +245,11 @@ class TestReplayFunctionality(unittest.TestCase):
         # Create a custom hand with specific actions
         hand_data = {
             "players": [
-                {"name": "Player1", "stack": 100.0},
-                {"name": "Player2", "stack": 200.0},
+                {"name": "Player1", "stack": 100.0},  # SB
+                {"name": "Player2", "stack": 200.0},  # BB
             ],
             "actions": [
+                # Preflop: SB (Player1) acts first in heads-up
                 {
                     "player_name": "Player1",
                     "action_type": "raise",
@@ -256,13 +257,8 @@ class TestReplayFunctionality(unittest.TestCase):
                     "street": "preflop",
                 },
                 {"player_name": "Player2", "action_type": "call", "street": "preflop"},
-                {"player_name": "Player1", "action_type": "check", "street": "flop"},
-                {
-                    "player_name": "Player2",
-                    "action_type": "bet",
-                    "amount": 6.0,
-                    "street": "flop",
-                },
+                # Flop: BB (Player2) acts first postflop in heads-up
+                {"player_name": "Player2", "action_type": "bet", "amount": 6.0, "street": "flop"},
                 {"player_name": "Player1", "action_type": "fold", "street": "flop"},
             ],
             "flop": "Ac7d2h",
@@ -342,10 +338,11 @@ class TestReplayFunctionality(unittest.TestCase):
         # Create hand with actions on multiple streets
         hand_data = {
             "players": [
-                {"name": "Hero", "stack": 100.0},
-                {"name": "Villain", "stack": 100.0},
+                {"name": "Hero", "stack": 100.0},    # SB
+                {"name": "Villain", "stack": 100.0}, # BB
             ],
             "actions": [
+                # Preflop: SB (Hero) acts first in heads-up
                 {
                     "player_name": "Hero",
                     "action_type": "raise",
@@ -353,6 +350,12 @@ class TestReplayFunctionality(unittest.TestCase):
                     "street": "preflop",
                 },
                 {"player_name": "Villain", "action_type": "call", "street": "preflop"},
+                # Flop: BB (Villain) acts first postflop in heads-up
+                {
+                    "player_name": "Villain",
+                    "action_type": "check",
+                    "street": "flop",
+                },
                 {
                     "player_name": "Hero",
                     "action_type": "bet",
@@ -366,13 +369,8 @@ class TestReplayFunctionality(unittest.TestCase):
                     "street": "flop",
                 },
                 {"player_name": "Hero", "action_type": "call", "street": "flop"},
-                {"player_name": "Hero", "action_type": "check", "street": "turn"},
-                {
-                    "player_name": "Villain",
-                    "action_type": "bet",
-                    "amount": 30.0,
-                    "street": "turn",
-                },
+                # Turn: BB (Villain) acts first postflop in heads-up
+                {"player_name": "Villain", "action_type": "bet", "amount": 30.0, "street": "turn"},
                 {"player_name": "Hero", "action_type": "fold", "street": "turn"},
             ],
             "flop": "AsKd7c",
@@ -490,12 +488,13 @@ class TestReplayIntegration(unittest.TestCase):
         # Step 1: Create hand
         hand_data = {
             "players": [
-                {"name": "Alice", "stack": 100.0},
-                {"name": "Bob", "stack": 100.0},
+                {"name": "Alice", "stack": 100.0},  # SB
+                {"name": "Bob", "stack": 100.0},    # BB
             ],
             "actions": [
-                {"player_name": "Alice", "action_type": "raise", "amount": 4.0},
-                {"player_name": "Bob", "action_type": "fold"},
+                # Preflop: SB (Alice) acts first in heads-up
+                {"player_name": "Alice", "action_type": "raise", "amount": 4.0, "street": "preflop"},
+                {"player_name": "Bob", "action_type": "fold", "street": "preflop"},
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
