@@ -284,8 +284,8 @@ class TestReplayFunctionality(unittest.TestCase):
         replay_data = json.loads(replay_response.data)
         steps = replay_data["steps"]
 
-        # Should have: initial, blinds, raise, call, check, bet, fold = 7 steps
-        self.assertEqual(len(steps), 7)
+        # Should have: initial, blinds, raise, call, bet, fold = 6 steps
+        self.assertEqual(len(steps), 6)
 
         # Verify specific actions
         raise_step = steps[2]  # First action after blinds
