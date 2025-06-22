@@ -45,36 +45,38 @@
         </div>
     </div>
 
-    <!-- Current Action Description -->
-    <div class="bg-yellow-50 rounded-lg p-4">
-        <div class="text-center">
-            <h5 class="font-medium text-lg" id="action-description">Loading replay...</h5>
-            <div class="text-sm text-gray-600 mt-1">
-                <span id="current-street">-</span> | Pot: $<span id="current-pot">0</span>
-            </div>
-        </div>
-    </div>
 
     <!-- Poker Table Visual -->
-    <div class="bg-green-600 rounded-lg p-6 relative min-h-96">
-        <!-- Board Cards -->
-        <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
-            <div class="flex space-x-2" id="board-cards">
-                <!-- Board cards will be populated here -->
+    <div class="relative p-8 min-h-96">
+        <!-- Poker Table Surface (Elliptical) -->
+        <div class="poker-table-container relative mx-auto" style="width: 600px; height: 400px;">
+            <!-- Table Felt (Elliptical shape) -->
+            <div class="poker-table-felt absolute inset-0 rounded-full shadow-2xl" 
+                 style="background: radial-gradient(ellipse, #0f5132 0%, #198754 30%, #0f5132 100%); 
+                        border: 8px solid #8b4513; 
+                        box-shadow: inset 0 0 50px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.5);">
             </div>
-        </div>
-        
-        <!-- Pot Display -->
-        <div class="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-4 py-2">
-            <div class="text-center">
-                <div class="text-xs text-gray-600">Pot</div>
-                <div class="font-bold text-lg">$<span id="pot-display">0</span></div>
+            
+            <!-- Table Edge (Inner border) -->
+            <div class="absolute inset-2 rounded-full border-4 border-yellow-600 opacity-60"></div>
+            
+            <!-- Board Cards -->
+            <div class="absolute top-16 left-1/2 transform -translate-x-1/2">
+                <div class="flex space-x-2" id="board-cards">
+                    <!-- Board cards will be populated here -->
+                </div>
             </div>
-        </div>
-        
-        <!-- Players positioned around the table -->
-        <div class="relative h-full">
-            <div id="players-container" class="relative h-full">
+            
+            <!-- Pot Display -->
+            <div class="absolute top-40 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-4 py-2 shadow-lg">
+                <div class="text-center">
+                    <div class="text-xs text-gray-600">Pot</div>
+                    <div class="font-bold text-lg">$<span id="pot-display">0</span></div>
+                </div>
+            </div>
+            
+            <!-- Players positioned around the elliptical table -->
+            <div id="players-container" class="absolute inset-0">
                 <!-- Players will be positioned here -->
             </div>
         </div>
@@ -111,13 +113,9 @@ class HandReplay {
         this.progressBar = document.getElementById('progress-bar');
         this.currentStepSpan = document.getElementById('current-step');
         this.totalStepsSpan = document.getElementById('total-steps');
-        this.actionDescription = document.getElementById('action-description');
-        this.currentStreet = document.getElementById('current-street');
-        this.currentPot = document.getElementById('current-pot');
         this.potDisplay = document.getElementById('pot-display');
         this.boardCards = document.getElementById('board-cards');
         this.playersContainer = document.getElementById('players-container');
-        this.playersInfo = document.getElementById('players-info');
     }
     
     bindEvents() {
@@ -134,7 +132,6 @@ class HandReplay {
     async loadReplayData() {
         try {
             console.log(`Loading replay data for play_id: ${this.playId}`);
-            this.actionDescription.textContent = `Loading replay for ${this.playId}...`;
             
             const response = await fetch(`/api/hands/${this.playId}/replay`);
             console.log('Response status:', response.status);
@@ -152,7 +149,6 @@ class HandReplay {
             this.updateDisplay();
         } catch (error) {
             console.error('Error loading replay data:', error);
-            this.actionDescription.textContent = 'Error loading replay data: ' + error.message;
         }
     }
     
@@ -216,10 +212,7 @@ class HandReplay {
         const progress = ((this.currentStep) / (this.steps.length - 1)) * 100;
         this.progressBar.style.width = `${progress}%`;
         
-        // Update action description
-        this.actionDescription.textContent = step.description;
-        this.currentStreet.textContent = step.street;
-        this.currentPot.textContent = step.pot_size;
+        // Update pot display
         this.potDisplay.textContent = step.pot_size;
         
         // Update board cards
@@ -257,37 +250,56 @@ class HandReplay {
     }
     
     updatePlayers(players) {
-        // Position players around the table with hole cards
+        // Position players around the elliptical table
         this.playersContainer.innerHTML = '';
-        const positions = [
-            { top: '80%', left: '20%' },  // SB
-            { top: '80%', left: '80%' },  // BB  
-            { top: '60%', left: '90%' },  // UTG
-            { top: '40%', left: '90%' },  // UTG1
-            { top: '20%', left: '80%' },  // MP
-            { top: '20%', left: '20%' },  // LJ
-            { top: '40%', left: '10%' },  // HJ
-            { top: '60%', left: '10%' },  // CO
-            { top: '80%', left: '50%' },  // BTN
-        ];
+        
+        // Table dimensions (matching CSS)
+        const tableWidth = 600;
+        const tableHeight = 400;
+        const centerX = tableWidth / 2;
+        const centerY = tableHeight / 2;
+        
+        // Ellipse parameters for player positioning (outside the felt with more spacing)
+        const radiusX = (tableWidth / 2) + 20; // More space for player boxes
+        const radiusY = (tableHeight / 2) + 15;
         
         players.forEach((player, index) => {
-            const pos = positions[index] || positions[0];
-            const playerElement = document.createElement('div');
-            playerElement.className = `absolute transform -translate-x-1/2 -translate-y-1/2 ${player.is_active ? 'bg-white' : 'bg-gray-200'} rounded-lg p-3 border-2 ${player.is_active ? 'border-green-400' : 'border-gray-300'} min-w-24 text-center shadow-md`;
-            playerElement.style.top = pos.top;
-            playerElement.style.left = pos.left;
+            // Calculate angle around the ellipse (starting from bottom, going counter-clockwise)
+            const angleOffset = -Math.PI / 2; // Start from bottom (6 o'clock)
+            const angle = angleOffset + (index * 2 * Math.PI) / players.length;
             
-            // Parse hole cards for better display
-            const holeCardsDisplay = player.hole_cards ? 
-                player.hole_cards.match(/.{1,2}/g)?.join(' ') || player.hole_cards : '';
+            // Calculate position on ellipse
+            const x = centerX + radiusX * Math.cos(angle);
+            const y = centerY + radiusY * Math.sin(angle);
+            
+            const playerElement = document.createElement('div');
+            playerElement.className = `absolute transform -translate-x-1/2 -translate-y-1/2 ${player.is_active ? 'bg-white' : 'bg-gray-200'} rounded-lg p-2 border-2 ${player.is_active ? 'border-green-400' : 'border-gray-300'} text-center shadow-lg`;
+            playerElement.style.left = `${x}px`;
+            playerElement.style.top = `${y}px`;
+            playerElement.style.zIndex = '10';
+            playerElement.style.minWidth = '120px';
+            
+            // Parse hole cards for horizontal display
+            let holeCardsHtml = '';
+            if (player.hole_cards) {
+                const cards = player.hole_cards.match(/.{1,2}/g) || [];
+                holeCardsHtml = `
+                    <div class="flex justify-center space-x-1 mb-2">
+                        ${cards.map(card => `
+                            <div class="bg-white border border-gray-800 rounded text-xs px-1 py-0.5 font-mono text-black shadow-sm" style="min-width: 20px;">
+                                ${card}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
             
             playerElement.innerHTML = `
                 <div class="text-xs font-bold mb-1">${player.name}</div>
                 <div class="text-xs text-gray-600 mb-1">${player.position}</div>
-                ${player.hole_cards ? `<div class="text-xs bg-blue-100 rounded px-2 py-1 mb-1 font-mono">${holeCardsDisplay}</div>` : ''}
+                ${holeCardsHtml}
                 <div class="text-xs font-bold text-green-600">$${player.stack}</div>
-                ${player.current_bet > 0 ? `<div class="text-xs text-red-600 font-bold">Bet: $${player.current_bet}</div>` : ''}
+                ${player.current_bet > 0 ? `<div class="text-xs text-red-600 font-bold mt-1">Bet: $${player.current_bet}</div>` : ''}
             `;
             
             this.playersContainer.appendChild(playerElement);
