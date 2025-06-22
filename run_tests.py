@@ -71,7 +71,9 @@ def main():
     test_suites = [
         ('test_poker_engine', 'Poker Engine Tests'),
         ('test_models', 'Database Models Tests'),
-        ('test_app', 'Flask Application Tests')
+        ('test_app', 'Flask Application Tests'),
+        ('test_position', 'Position Enum Tests'),
+        ('test_template_position', 'Position Template Tests')
     ]
     
     total_tests = 0

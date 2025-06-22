@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from models import db, Hand, Player, Action
+from models import db, Hand, Player, Action, Position
 from poker_engine import PokerHandBuilder
 import os
 import uuid
@@ -43,6 +43,11 @@ def save_hand():
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
+        # Validate maximum number of players
+        players_data = data['players']
+        if len(players_data) >= 10:
+            return jsonify({'error': 'Maximum of 9 players allowed'}), 400
+        
         # Generate play ID if not specified
         play_id = data.get('play_id', str(uuid.uuid4()))
         
@@ -75,6 +80,7 @@ def save_hand():
             player_name = action['player_name']
             action_type = action['action_type']
             amount = action.get('amount', 0)
+            street = action.get('street', 'preflop')  # Get street from action data
             
             # Validate player exists
             if player_name not in player_stacks:
@@ -89,9 +95,10 @@ def save_hand():
                 actual_amount = min(call_amount, available_chips)
                 player_bets[player_name] += actual_amount
                 builder.add_action(player_name, action_type, actual_amount)
-                # Store processed action with correct amount
+                # Store processed action with correct amount and street
                 processed_action = action.copy()
                 processed_action['amount'] = actual_amount
+                processed_action['street'] = street
                 processed_actions.append(processed_action)
                 
             elif action_type in ['bet', 'raise']:
@@ -107,11 +114,15 @@ def save_hand():
                 player_bets[player_name] = total_bet
                 current_bet = max(current_bet, total_bet)
                 builder.add_action(player_name, action_type, amount)
-                processed_actions.append(action.copy())
+                processed_action = action.copy()
+                processed_action['street'] = street
+                processed_actions.append(processed_action)
                 
             else:  # fold, check
                 builder.add_action(player_name, action_type, amount)
-                processed_actions.append(action.copy())
+                processed_action = action.copy()
+                processed_action['street'] = street
+                processed_actions.append(processed_action)
         
         # Set board cards
         if 'flop' in data:
@@ -137,14 +148,17 @@ def save_hand():
         db.session.add(hand)
         db.session.flush()  # Get ID
         
-        # Save player information
+        # Save player information with Position enum
+        position_mapping = [Position.SB, Position.BB, Position.UTG, Position.UTG1, Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN]
         for i, player_data in enumerate(players_data):
+            # Use Position enum if within range, otherwise fall back to index
+            position = position_mapping[i] if i < len(position_mapping) else i
             player = Player(
                 hand_id=hand.id,
                 name=player_data['name'],
                 stack=player_data['stack'],
                 hole_cards=data.get('hole_cards', {}).get(player_data['name'], ''),
-                position=i
+                position=position
             )
             db.session.add(player)
         
@@ -186,11 +200,11 @@ def create_sample():
                 {'name': 'Charlie', 'stack': 150.0}
             ],
             "actions": [
-                {"player_name": "Charlie", "action_type": "fold"},
-                {"player_name": "Alice", "action_type": "raise", "amount": 6.0},
-                {"player_name": "Bob", "action_type": "call"},
-                {"player_name": "Alice", "action_type": "bet", "amount": 8.0},
-                {"player_name": "Bob", "action_type": "fold"}
+                {"player_name": "Charlie", "action_type": "fold", "street": "preflop"},
+                {"player_name": "Alice", "action_type": "raise", "amount": 6.0, "street": "preflop"},
+                {"player_name": "Bob", "action_type": "call", "street": "preflop"},
+                {"player_name": "Alice", "action_type": "bet", "amount": 8.0, "street": "flop"},
+                {"player_name": "Bob", "action_type": "fold", "street": "flop"}
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
@@ -205,11 +219,16 @@ def create_sample():
         # Use the same validation logic as save_hand
         # This will automatically calculate correct call amounts
         data = sample_hand_data
+        
+        # Validate maximum number of players
+        players_data = data['players']
+        if len(players_data) >= 10:
+            return jsonify({'error': 'Maximum of 9 players allowed'}), 400
+        
         play_id = data.get('play_id', str(uuid.uuid4()))
         
         # Build hand with PokerKit
         builder = PokerHandBuilder()
-        players_data = data['players']
         
         builder.create_game(
             players=players_data,
@@ -236,6 +255,7 @@ def create_sample():
             player_name = action['player_name']
             action_type = action['action_type']
             amount = action.get('amount', 0)
+            street = action.get('street', 'preflop')  # Get street from action data
             
             if action_type == 'call':
                 call_amount = max(0, current_bet - player_bets[player_name])
@@ -245,6 +265,7 @@ def create_sample():
                 builder.add_action(player_name, action_type, actual_amount)
                 processed_action = action.copy()
                 processed_action['amount'] = actual_amount
+                processed_action['street'] = street
                 processed_actions.append(processed_action)
                 
             elif action_type in ['bet', 'raise']:
@@ -257,11 +278,15 @@ def create_sample():
                 player_bets[player_name] = total_bet
                 current_bet = max(current_bet, total_bet)
                 builder.add_action(player_name, action_type, amount)
-                processed_actions.append(action.copy())
+                processed_action = action.copy()
+                processed_action['street'] = street
+                processed_actions.append(processed_action)
                 
             else:  # fold, check
                 builder.add_action(player_name, action_type, amount)
-                processed_actions.append(action.copy())
+                processed_action = action.copy()
+                processed_action['street'] = street
+                processed_actions.append(processed_action)
         
         # Set board cards
         if 'flop' in data:
@@ -283,14 +308,17 @@ def create_sample():
         db.session.add(hand)
         db.session.flush()
         
-        # Save player information
+        # Save player information with Position enum
+        position_mapping = [Position.SB, Position.BB, Position.UTG, Position.UTG1, Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN]
         for i, player_data in enumerate(players_data):
+            # Use Position enum if within range, otherwise fall back to index
+            position = position_mapping[i] if i < len(position_mapping) else i
             player = Player(
                 hand_id=hand.id,
                 name=player_data['name'],
                 stack=player_data['stack'],
                 hole_cards=data.get('hole_cards', {}).get(player_data['name'], ''),
-                position=i
+                position=position
             )
             db.session.add(player)
         
@@ -379,7 +407,7 @@ def get_hand_details_html(play_id):
     players = Player.query.filter_by(hand_id=hand.id).order_by(Player.position).all()
     actions = Action.query.filter_by(hand_id=hand.id).order_by(Action.action_order).all()
     
-    return render_template('hand_detail.html', hand=hand, players=players, actions=actions)
+    return render_template('hand_detail.html', hand=hand, players=players, actions=actions, Position=Position)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

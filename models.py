@@ -1,7 +1,28 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from enum import IntEnum
 
 db = SQLAlchemy()
+
+class Position(IntEnum):
+    """Poker position enumeration"""
+    SB = 0      # Small Blind
+    BB = 1      # Big Blind
+    UTG = 2     # Under The Gun
+    UTG1 = 3    # Under The Gun + 1
+    MP = 4      # Middle Position
+    LJ = 5      # Lojack
+    HJ = 6      # Hijack
+    CO = 7      # Cutoff
+    BTN = 8     # Button
+    
+    @classmethod
+    def get_display_name(cls, position_value: int) -> str:
+        """Get human-readable position name"""
+        try:
+            return cls(position_value).name
+        except ValueError:
+            return f"P{position_value}"
 
 class Hand(db.Model):
     """Main poker hand information"""
