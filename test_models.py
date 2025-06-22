@@ -185,6 +185,79 @@ class TestModels(unittest.TestCase):
         action = Action(player_name="Charlie", action_type="call")
         self.assertEqual(repr(action), "<Action Charlie call>")
 
+    def test_action_replay_fields(self):
+        """Test Action model fields essential for replay functionality"""
+        hand = Hand(play_id="replay-test-hand")
+        db.session.add(hand)
+        db.session.commit()
+
+        # Create multiple actions with replay-relevant data
+        actions_data = [
+            {
+                "street": "preflop",
+                "player_name": "Alice", 
+                "action_type": "raise",
+                "amount": 6.0,
+                "pot_size": 9.0,
+                "remaining_stack": 94.0,
+                "action_order": 0
+            },
+            {
+                "street": "preflop",
+                "player_name": "Bob",
+                "action_type": "call", 
+                "amount": 4.0,
+                "pot_size": 13.0,
+                "remaining_stack": 96.0,
+                "action_order": 1
+            },
+            {
+                "street": "flop",
+                "player_name": "Alice",
+                "action_type": "bet",
+                "amount": 8.0,
+                "pot_size": 21.0,
+                "remaining_stack": 86.0,
+                "action_order": 2
+            },
+            {
+                "street": "flop",
+                "player_name": "Bob",
+                "action_type": "fold",
+                "amount": 0.0,
+                "pot_size": 21.0,
+                "remaining_stack": 96.0,
+                "action_order": 3
+            }
+        ]
+
+        for action_data in actions_data:
+            action = Action(hand_id=hand.id, **action_data)
+            db.session.add(action)
+
+        db.session.commit()
+
+        # Retrieve actions in order
+        saved_actions = Action.query.filter_by(hand_id=hand.id).order_by(Action.action_order).all()
+        self.assertEqual(len(saved_actions), 4)
+
+        # Verify sequential action order
+        for i, action in enumerate(saved_actions):
+            self.assertEqual(action.action_order, i)
+
+        # Verify pot progression (should only increase or stay same)
+        pot_sizes = [action.pot_size for action in saved_actions]
+        self.assertEqual(pot_sizes, [9.0, 13.0, 21.0, 21.0])
+
+        # Verify street progression
+        streets = [action.street for action in saved_actions]
+        self.assertEqual(streets, ["preflop", "preflop", "flop", "flop"])
+
+        # Verify player stack tracking
+        alice_actions = [a for a in saved_actions if a.player_name == "Alice"]
+        alice_stacks = [a.remaining_stack for a in alice_actions]
+        self.assertEqual(alice_stacks, [94.0, 86.0])  # Should decrease over time
+
     def test_hand_player_relationship(self):
         """Test relationship between Hand and Player models"""
         # Create hand

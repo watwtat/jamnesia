@@ -76,6 +76,7 @@ def main():
         ("test_app", "Flask Application Tests"),
         ("test_position", "Position Enum Tests"),
         ("test_template_position", "Position Template Tests"),
+        ("test_replay", "Hand Replay Tests"),
     ]
 
     total_tests = 0

@@ -308,6 +308,34 @@ class TestApp(unittest.TestCase):
         self.assertIn("error", data)
         self.assertEqual(data["error"], "Hand not found")
 
+    def test_get_hand_details_html(self):
+        """Test retrieving hand details as HTML for modal display"""
+        # Create a sample hand first
+        create_response = self.client.post("/api/create-sample")
+        create_data = json.loads(create_response.data)
+        play_id = create_data["play_id"]
+
+        response = self.client.get(f"/api/hands/{play_id}/details")
+
+        self.assertEqual(response.status_code, 200)
+        
+        # Should return HTML content
+        html_content = response.data.decode('utf-8')
+        self.assertIn('<div', html_content)
+        self.assertIn('Hand Information', html_content)
+        self.assertIn('Players', html_content)
+        self.assertIn('Actions', html_content)
+        self.assertIn(play_id, html_content)
+
+    def test_get_hand_details_html_not_found(self):
+        """Test retrieving hand details HTML for non-existent hand"""
+        response = self.client.get("/api/hands/non-existent-id/details")
+
+        self.assertEqual(response.status_code, 404)
+        
+        html_content = response.data.decode('utf-8')
+        self.assertIn("Hand not found", html_content)
+
     def test_save_hand_with_custom_play_id(self):
         """Test saving hand with custom play_id"""
         custom_play_id = "custom-test-hand-123"

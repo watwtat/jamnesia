@@ -491,5 +491,197 @@ def get_hand_details_html(play_id):
     )
 
 
+@app.route("/api/hands/<play_id>/replay-ui")
+def get_hand_replay_ui(play_id):
+    """Get hand replay UI as HTML for modal display"""
+    hand = Hand.query.filter_by(play_id=play_id).first()
+    if not hand:
+        return '<div class="text-red-500">Hand not found</div>', 404
+
+    return render_template("hand_replay.html", hand=hand)
+
+
+@app.route("/api/hands/<play_id>/replay")
+def get_hand_replay(play_id):
+    """Get hand replay data with step-by-step progression"""
+    hand = Hand.query.filter_by(play_id=play_id).first()
+    if not hand:
+        return jsonify({"error": "Hand not found"}), 404
+
+    players = Player.query.filter_by(hand_id=hand.id).all()
+    actions = (
+        Action.query.filter_by(hand_id=hand.id).order_by(Action.action_order).all()
+    )
+
+    # Build replay steps with proper state tracking
+    replay_steps = []
+    
+    # Initialize player state tracking
+    player_state = {}
+    for p in players:
+        player_state[p.name] = {
+            "name": p.name,
+            "original_stack": p.stack,
+            "current_stack": p.stack,
+            "hole_cards": p.hole_cards,
+            "position": p.position,
+            "current_bet": 0,
+            "total_invested": 0,
+            "is_active": True,
+            "has_folded": False
+        }
+    
+    current_pot = 0
+    current_street = "preflop"
+    board_cards = []
+    
+    # Step 0: Initial game state
+    initial_state = {
+        "step": 0,
+        "description": "Hand begins",
+        "street": "preflop",
+        "players": [
+            {
+                "name": state["name"],
+                "stack": state["current_stack"],
+                "hole_cards": state["hole_cards"],
+                "position": state["position"],
+                "current_bet": state["current_bet"],
+                "is_active": state["is_active"]
+            }
+            for state in player_state.values()
+        ],
+        "pot_size": current_pot,
+        "board": board_cards.copy(),
+        "current_bet": 0,
+        "action": None
+    }
+    replay_steps.append(initial_state)
+
+    # Step 1: Post blinds
+    if len(players) >= 2:
+        sb_player = next((p for p in players if p.position == "SB"), None)
+        bb_player = next((p for p in players if p.position == "BB"), None)
+        
+        if sb_player:
+            player_state[sb_player.name]["current_stack"] -= hand.small_blind
+            player_state[sb_player.name]["current_bet"] = hand.small_blind
+            player_state[sb_player.name]["total_invested"] = hand.small_blind
+            current_pot += hand.small_blind
+            
+        if bb_player:
+            player_state[bb_player.name]["current_stack"] -= hand.big_blind
+            player_state[bb_player.name]["current_bet"] = hand.big_blind
+            player_state[bb_player.name]["total_invested"] = hand.big_blind
+            current_pot += hand.big_blind
+        
+        blinds_state = {
+            "step": 1,
+            "description": f"Blinds posted: {sb_player.name if sb_player else 'SB'} (${hand.small_blind}), {bb_player.name if bb_player else 'BB'} (${hand.big_blind})",
+            "street": "preflop",
+            "players": [
+                {
+                    "name": state["name"],
+                    "stack": state["current_stack"],
+                    "hole_cards": state["hole_cards"],
+                    "position": state["position"],
+                    "current_bet": state["current_bet"],
+                    "is_active": state["is_active"]
+                }
+                for state in player_state.values()
+            ],
+            "pot_size": current_pot,
+            "board": board_cards.copy(),
+            "current_bet": hand.big_blind,
+            "action": {
+                "type": "blinds",
+                "description": "Blinds posted"
+            }
+        }
+        replay_steps.append(blinds_state)
+
+    # Add each action as a step
+    current_step = len(replay_steps)
+    for action in actions:
+        # Update board cards when street changes
+        if action.street != current_street:
+            current_street = action.street
+            if hand.board:
+                board_parts = hand.board.split()
+                if action.street == "flop" and len(board_parts) >= 3:
+                    board_cards = board_parts[:3]
+                elif action.street == "turn" and len(board_parts) >= 4:
+                    board_cards = board_parts[:4]
+                elif action.street == "river" and len(board_parts) >= 5:
+                    board_cards = board_parts[:5]
+            
+            # Reset current bets for new street
+            for state in player_state.values():
+                state["current_bet"] = 0
+
+        # Process the action
+        player_name = action.player_name
+        if player_name in player_state:
+            if action.action_type == "fold":
+                player_state[player_name]["is_active"] = False
+                player_state[player_name]["has_folded"] = True
+                player_state[player_name]["current_bet"] = 0
+            elif action.action_type in ["bet", "raise"]:
+                additional_bet = action.amount - player_state[player_name]["current_bet"]
+                player_state[player_name]["current_stack"] -= additional_bet
+                player_state[player_name]["current_bet"] = action.amount
+                player_state[player_name]["total_invested"] += additional_bet
+                current_pot += additional_bet
+            elif action.action_type == "call":
+                player_state[player_name]["current_stack"] -= action.amount
+                player_state[player_name]["current_bet"] += action.amount
+                player_state[player_name]["total_invested"] += action.amount
+                current_pot += action.amount
+            elif action.action_type == "check":
+                # No money changes on check
+                pass
+
+        action_state = {
+            "step": current_step,
+            "description": f"{action.player_name} {action.action_type}" + (f" ${action.amount}" if action.amount > 0 else ""),
+            "street": action.street,
+            "players": [
+                {
+                    "name": state["name"],
+                    "stack": state["current_stack"],
+                    "hole_cards": state["hole_cards"],
+                    "position": state["position"],
+                    "current_bet": state["current_bet"],
+                    "is_active": state["is_active"]
+                }
+                for state in player_state.values()
+            ],
+            "pot_size": current_pot,
+            "board": board_cards.copy(),
+            "current_bet": max(state["current_bet"] for state in player_state.values() if state["is_active"]) if any(state["is_active"] for state in player_state.values()) else 0,
+            "action": {
+                "player": action.player_name,
+                "type": action.action_type,
+                "amount": action.amount,
+                "street": action.street
+            }
+        }
+        replay_steps.append(action_state)
+        current_step += 1
+
+    return jsonify({
+        "hand_id": hand.play_id,
+        "total_steps": len(replay_steps),
+        "steps": replay_steps,
+        "meta": {
+            "game_type": hand.game_type,
+            "small_blind": hand.small_blind,
+            "big_blind": hand.big_blind,
+            "board": hand.board,
+            "created_at": hand.created_at.isoformat()
+        }
+    })
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)

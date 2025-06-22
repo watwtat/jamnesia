@@ -57,6 +57,30 @@
             console.error('HTMX Error:', event.detail);
             alert('An error occurred: ' + event.detail.xhr.responseText);
         });
+        
+        // Handle HTMX content loaded events
+        document.addEventListener('htmx:afterSwap', function(event) {
+            // Check if replay content was loaded
+            const replayContainer = document.getElementById('hand-replay-container');
+            if (replayContainer) {
+                console.log('Replay container detected after HTMX swap');
+                // Extract play_id from the URL that was just loaded
+                const target = event.detail.target;
+                const xhr = event.detail.xhr;
+                if (xhr && xhr.responseURL) {
+                    const urlMatch = xhr.responseURL.match(/\/api\/hands\/([^\/]+)\/replay-ui/);
+                    if (urlMatch) {
+                        const playId = urlMatch[1];
+                        console.log(`Initializing replay for ${playId} after HTMX swap`);
+                        setTimeout(() => {
+                            if (window.initHandReplay) {
+                                window.initHandReplay(playId);
+                            }
+                        }, 150);
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
