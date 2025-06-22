@@ -185,10 +185,12 @@ python -m unittest test_poker_engine.py # Run specific tests
 coverage run run_tests.py && coverage html # Generate coverage report
 ```
 
-**Test Coverage (50 tests total):**
+**Test Coverage (74 tests total):**
 - **Poker Engine Tests (19 tests)**: PHH generation, hand building, edge cases
 - **Database Models Tests (13 tests)**: Model creation, relationships, constraints  
-- **Flask Application Tests (18 tests)**: API endpoints, workflows, error handling
+- **Flask Application Tests (23 tests)**: API endpoints, workflows, error handling
+- **Position Enum Tests (15 tests)**: Position handling, validation, display names
+- **Position Template Tests (4 tests)**: Template rendering, position display
 
 All tests use isolated temporary databases and pass 100% of the time.
 
