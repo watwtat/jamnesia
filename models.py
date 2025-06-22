@@ -53,7 +53,7 @@ class Player(db.Model):
     name = db.Column(db.String(50), nullable=False)
     stack = db.Column(db.Float, nullable=False)
     hole_cards = db.Column(db.String(10))  # "AsKh" format
-    position = db.Column(db.Integer)  # 0=SB, 1=BB, 2=UTG, etc.
+    position = db.Column(db.String(10))  # "SB", "BB", "UTG", etc.
     
     def __repr__(self):
         return f'<Player {self.name}>'

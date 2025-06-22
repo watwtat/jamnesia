@@ -148,11 +148,11 @@ def save_hand():
         db.session.add(hand)
         db.session.flush()  # Get ID
         
-        # Save player information with Position enum
-        position_mapping = [Position.SB, Position.BB, Position.UTG, Position.UTG1, Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN]
+        # Save player information with position strings
+        position_mapping = ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
         for i, player_data in enumerate(players_data):
-            # Use Position enum if within range, otherwise fall back to index
-            position = position_mapping[i] if i < len(position_mapping) else i
+            # Use position string if within range, otherwise fall back to position number
+            position = position_mapping[i] if i < len(position_mapping) else f"P{i}"
             player = Player(
                 hand_id=hand.id,
                 name=player_data['name'],
@@ -308,11 +308,11 @@ def create_sample():
         db.session.add(hand)
         db.session.flush()
         
-        # Save player information with Position enum
-        position_mapping = [Position.SB, Position.BB, Position.UTG, Position.UTG1, Position.MP, Position.LJ, Position.HJ, Position.CO, Position.BTN]
+        # Save player information with position strings
+        position_mapping = ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
         for i, player_data in enumerate(players_data):
-            # Use Position enum if within range, otherwise fall back to index
-            position = position_mapping[i] if i < len(position_mapping) else i
+            # Use position string if within range, otherwise fall back to position number
+            position = position_mapping[i] if i < len(position_mapping) else f"P{i}"
             player = Player(
                 hand_id=hand.id,
                 name=player_data['name'],

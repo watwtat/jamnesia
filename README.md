@@ -135,7 +135,7 @@ POST /api/create-sample
 - `name`: Player name
 - `stack`: Starting stack size
 - `hole_cards`: Player's hole cards (e.g., "AsKh")
-- `position`: Seat position (0=SB, 1=BB, etc.)
+- `position`: Seat position ("SB", "BB", "UTG", "BTN", etc.)
 
 ### actions
 - `id`: Primary key
