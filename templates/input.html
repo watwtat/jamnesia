@@ -349,23 +349,83 @@ function setupAutocomplete(input) {
 
 // Card validation
 function validateCard(input) {
-    const value = input.value.toUpperCase();
-    const cardPattern = /^([AKQJT98765432]{1,2}[SHDC]{1,2})+$/;
+    const value = input.value;
     
-    if (value && !cardPattern.test(value)) {
+    // Normalize to proper format (uppercase ranks, lowercase suits)
+    const normalizedValue = value.replace(/([AKQJT98765432])([HDCShdcs])/g, (match, rank, suit) => {
+        return rank.toUpperCase() + suit.toLowerCase();
+    });
+    
+    const cardPattern = /^([AKQJT98765432][hdcs])+$/;
+    
+    if (value && !cardPattern.test(normalizedValue)) {
         input.classList.add('border-red-500');
         showValidationMessage(`Invalid card format: ${value}. Use format like "AsKh" or "AhKd5c"`, 'error');
     } else {
         input.classList.remove('border-red-500');
-        input.value = value;
+        input.value = normalizedValue;
     }
     validateForm();
 }
 
+// Get all currently used cards
+function getAllUsedCards() {
+    const usedCards = new Set();
+    
+    // Get cards from all player hole cards
+    document.querySelectorAll('.card-input').forEach(input => {
+        if (input.value && input.value.trim()) {
+            const cards = parseCardsFromString(input.value.trim());
+            cards.forEach(card => usedCards.add(card));
+        }
+    });
+    
+    // Get cards from board (flop, turn, river)
+    ['flop', 'turn', 'river'].forEach(street => {
+        const input = document.querySelector(`[name="${street}"]`);
+        if (input && input.value && input.value.trim()) {
+            const cards = parseCardsFromString(input.value.trim());
+            cards.forEach(card => usedCards.add(card));
+        }
+    });
+    
+    return usedCards;
+}
+
+// Parse cards from string (e.g., "AsKh" -> ["As", "Kh"], "AhKd5c" -> ["Ah", "Kd", "5c"])
+function parseCardsFromString(cardString) {
+    if (!cardString) return [];
+    
+    const cards = [];
+    const cleanString = cardString.replace(/\s/g, ''); // Remove spaces
+    
+    // Normalize to uppercase ranks and lowercase suits
+    const normalizedString = cleanString.replace(/([AKQJT98765432])([HDCShdcs])/g, (match, rank, suit) => {
+        return rank.toUpperCase() + suit.toLowerCase();
+    });
+    
+    // Regex to match valid card format: [AKQJT98765432][hdcs]
+    const cardRegex = /[AKQJT98765432][hdcs]/g;
+    const matches = normalizedString.match(cardRegex);
+    
+    if (matches) {
+        cards.push(...matches);
+    }
+    
+    return cards;
+}
+
 // Card picker functionality
 function showCardPicker(button, numCards = 2) {
-    const suits = ['h', 'd', 'c', 's'];
-    const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+    const suits = ['h', 'd', 'c', 's']; // lowercase suits
+    const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']; // uppercase ranks
+    
+    // Get currently used cards (excluding the current input we're editing)
+    const currentInput = button.previousElementSibling;
+    const currentValue = currentInput.value;
+    currentInput.value = ''; // Temporarily clear to exclude from used cards
+    const usedCards = getAllUsedCards();
+    currentInput.value = currentValue; // Restore value
     
     // Create modal
     const modal = document.createElement('div');
@@ -378,9 +438,14 @@ function showCardPicker(button, numCards = 2) {
         <h3 class="text-lg font-bold mb-4">Select ${numCards === 1 ? 'Card' : 'Cards'}</h3>
         <div class="grid grid-cols-4 gap-2 mb-4" id="card-grid">
             ${ranks.map(rank => 
-                suits.map(suit => 
-                    `<button type="button" class="card-btn p-2 border rounded hover:bg-gray-100 text-sm" data-card="${rank}${suit}">${rank}${suit}</button>`
-                ).join('')
+                suits.map(suit => {
+                    const card = rank + suit; // e.g., "As", "Kh"
+                    const isUsed = usedCards.has(card);
+                    const buttonClass = isUsed 
+                        ? 'card-btn p-2 border rounded text-sm bg-gray-200 text-gray-400 cursor-not-allowed' 
+                        : 'card-btn p-2 border rounded hover:bg-gray-100 text-sm cursor-pointer';
+                    return `<button type="button" class="${buttonClass}" data-card="${card}" ${isUsed ? 'disabled' : ''}>${card}</button>`;
+                }).join('')
             ).join('')}
         </div>
         <div class="mb-4">
@@ -402,23 +467,43 @@ function showCardPicker(button, numCards = 2) {
     window.selectedCards = [];
     window.maxCards = numCards;
     
+    // Pre-select currently selected cards
+    if (currentValue) {
+        const currentCards = parseCardsFromString(currentValue);
+        window.selectedCards = [...currentCards];
+        document.getElementById('selected-cards').value = window.selectedCards.join('');
+        
+        // Highlight pre-selected cards
+        currentCards.forEach(card => {
+            const btn = content.querySelector(`[data-card="${card}"]`);
+            if (btn && !btn.disabled) {
+                btn.classList.add('bg-blue-500', 'text-white');
+                btn.classList.remove('hover:bg-gray-100');
+            }
+        });
+    }
+    
     // Add card selection logic
     content.querySelectorAll('.card-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const card = this.dataset.card;
-            
-            if (this.classList.contains('bg-blue-500')) {
-                // Deselect
-                this.classList.remove('bg-blue-500', 'text-white');
-                window.selectedCards = window.selectedCards.filter(c => c !== card);
-            } else if (window.selectedCards.length < window.maxCards) {
-                // Select
-                this.classList.add('bg-blue-500', 'text-white');
-                window.selectedCards.push(card);
-            }
-            
-            document.getElementById('selected-cards').value = window.selectedCards.join('');
-        });
+        if (!btn.disabled) {
+            btn.addEventListener('click', function() {
+                const card = this.dataset.card;
+                
+                if (this.classList.contains('bg-blue-500')) {
+                    // Deselect
+                    this.classList.remove('bg-blue-500', 'text-white');
+                    this.classList.add('hover:bg-gray-100');
+                    window.selectedCards = window.selectedCards.filter(c => c !== card);
+                } else if (window.selectedCards.length < window.maxCards) {
+                    // Select
+                    this.classList.add('bg-blue-500', 'text-white');
+                    this.classList.remove('hover:bg-gray-100');
+                    window.selectedCards.push(card);
+                }
+                
+                document.getElementById('selected-cards').value = window.selectedCards.join('');
+            });
+        }
     });
 }
 
