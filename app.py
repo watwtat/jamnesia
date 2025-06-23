@@ -169,11 +169,22 @@ def save_hand():
         # Generate PHH
         phh_content = builder.generate_phh()
 
+        # Combine board cards into single string if separated
+        board_string = data.get("board", "")
+        if not board_string:
+            # Try to build from separate flop/turn/river fields
+            if "flop" in data and data["flop"]:
+                board_string += data["flop"]
+            if "turn" in data and data["turn"]:
+                board_string += data["turn"]
+            if "river" in data and data["river"]:
+                board_string += data["river"]
+
         # Save to database
         hand = Hand(
             play_id=play_id,
             game_type=data.get("game_type", "No Limit Texas Holdem"),
-            board=data.get("board", ""),
+            board=board_string,
             small_blind=data.get("small_blind", 1.0),
             big_blind=data.get("big_blind", 2.0),
             phh_content=phh_content,
@@ -226,20 +237,18 @@ def save_hand():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/create-sample", methods=["POST"])
-def create_sample():
-    """Create a sample hand"""
-    try:
-        # Create sample hand data in the format expected by save_hand
-        sample_hand_data = {
-            "play_id": str(uuid.uuid4()),
+def get_sample_hand_patterns():
+    """Get all available sample hand patterns"""
+    return {
+        "standard": {
+            "name": "Standard 3-way Hand",
+            "description": "Preflop raise and flop action",
             "players": [
                 {"name": "Alice", "stack": 100.0},  # SB
                 {"name": "Bob", "stack": 100.0},    # BB  
                 {"name": "Charlie", "stack": 150.0}, # BTN/UTG
             ],
             "actions": [
-                # Preflop: UTG (Charlie) acts first after blinds
                 {
                     "player_name": "Charlie",
                     "action_type": "raise",
@@ -251,7 +260,7 @@ def create_sample():
                 {
                     "player_name": "Alice",
                     "action_type": "call",
-                    "amount": 5.0,  # SB already paid $1, need $5 more to call $6
+                    "amount": 5.0,
                     "street": "preflop",
                     "pot_size": 14.0,
                     "remaining_stack": 94.0,
@@ -259,12 +268,11 @@ def create_sample():
                 {
                     "player_name": "Bob",
                     "action_type": "call",
-                    "amount": 4.0,  # BB already paid $2, need $4 more to call $6
+                    "amount": 4.0,
                     "street": "preflop",
                     "pot_size": 18.0,
                     "remaining_stack": 94.0,
                 },
-                # Flop: SB (Alice) acts first postflop
                 {
                     "player_name": "Alice",
                     "action_type": "check",
@@ -290,7 +298,7 @@ def create_sample():
                 {
                     "player_name": "Alice",
                     "action_type": "call",
-                    "amount": 12.0,  # Call Bob's $12 bet
+                    "amount": 12.0,
                     "street": "flop",
                     "pot_size": 42.0,
                     "remaining_stack": 82.0,
@@ -300,10 +308,462 @@ def create_sample():
             "big_blind": 2.0,
             "hole_cards": {"Alice": "AsKh", "Bob": "QdQc", "Charlie": "7s2h"},
             "flop": "AhKd5c",
+        },
+        "heads_up": {
+            "name": "Heads-up Battle",
+            "description": "Aggressive heads-up play with multiple streets",
+            "players": [
+                {"name": "Hero", "stack": 100.0},    # SB/BTN
+                {"name": "Villain", "stack": 100.0}, # BB
+            ],
+            "actions": [
+                {
+                    "player_name": "Hero",
+                    "action_type": "raise",
+                    "amount": 6.0,
+                    "street": "preflop",
+                    "pot_size": 9.0,
+                    "remaining_stack": 94.0,
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "call",
+                    "amount": 4.0,
+                    "street": "preflop",
+                    "pot_size": 12.0,
+                    "remaining_stack": 94.0,
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "check",
+                    "street": "flop",
+                    "pot_size": 12.0,
+                    "remaining_stack": 94.0,
+                },
+                {
+                    "player_name": "Hero",
+                    "action_type": "bet",
+                    "amount": 8.0,
+                    "street": "flop",
+                    "pot_size": 20.0,
+                    "remaining_stack": 86.0,
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "raise",
+                    "amount": 24.0,
+                    "street": "flop",
+                    "pot_size": 44.0,
+                    "remaining_stack": 70.0,
+                },
+                {
+                    "player_name": "Hero",
+                    "action_type": "call",
+                    "amount": 16.0,
+                    "street": "flop",
+                    "pot_size": 48.0,
+                    "remaining_stack": 70.0,
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "bet",
+                    "amount": 35.0,
+                    "street": "turn",
+                    "pot_size": 83.0,
+                    "remaining_stack": 35.0,
+                },
+                {
+                    "player_name": "Hero",
+                    "action_type": "call",
+                    "amount": 35.0,
+                    "street": "turn",
+                    "pot_size": 118.0,
+                    "remaining_stack": 35.0,
+                },
+                {
+                    "player_name": "Villain",
+                    "action_type": "bet",
+                    "amount": 35.0,
+                    "street": "river",
+                    "pot_size": 153.0,
+                    "remaining_stack": 0.0,
+                },
+                {
+                    "player_name": "Hero",
+                    "action_type": "call",
+                    "amount": 35.0,
+                    "street": "river",
+                    "pot_size": 188.0,
+                    "remaining_stack": 0.0,
+                },
+            ],
+            "small_blind": 1.0,
+            "big_blind": 2.0,
+            "hole_cards": {"Hero": "AhKs", "Villain": "8d8c"},
+            "flop": "Ac7h2s",
+            "turn": "8h",
+            "river": "Kd",
+        },
+        "all_in": {
+            "name": "All-in Showdown",
+            "description": "Short stack goes all-in preflop",
+            "players": [
+                {"name": "ShortStack", "stack": 15.0},  # SB
+                {"name": "BigStack", "stack": 200.0},   # BB
+                {"name": "MidStack", "stack": 75.0},    # BTN
+            ],
+            "actions": [
+                {
+                    "player_name": "MidStack",
+                    "action_type": "raise",
+                    "amount": 6.0,
+                    "street": "preflop",
+                    "pot_size": 9.0,
+                    "remaining_stack": 69.0,
+                },
+                {
+                    "player_name": "ShortStack",
+                    "action_type": "raise",
+                    "amount": 15.0,  # All-in
+                    "street": "preflop",
+                    "pot_size": 23.0,
+                    "remaining_stack": 0.0,
+                },
+                {
+                    "player_name": "BigStack",
+                    "action_type": "call",
+                    "amount": 13.0,
+                    "street": "preflop",
+                    "pot_size": 36.0,
+                    "remaining_stack": 185.0,
+                },
+                {
+                    "player_name": "MidStack",
+                    "action_type": "call",
+                    "amount": 9.0,
+                    "street": "preflop",
+                    "pot_size": 45.0,
+                    "remaining_stack": 60.0,
+                },
+                {
+                    "player_name": "BigStack",
+                    "action_type": "check",
+                    "street": "flop",
+                    "pot_size": 45.0,
+                    "remaining_stack": 185.0,
+                },
+                {
+                    "player_name": "MidStack",
+                    "action_type": "check",
+                    "street": "flop",
+                    "pot_size": 45.0,
+                    "remaining_stack": 60.0,
+                },
+                {
+                    "player_name": "BigStack",
+                    "action_type": "check",
+                    "street": "turn",
+                    "pot_size": 45.0,
+                    "remaining_stack": 185.0,
+                },
+                {
+                    "player_name": "MidStack",
+                    "action_type": "check",
+                    "street": "turn",
+                    "pot_size": 45.0,
+                    "remaining_stack": 60.0,
+                },
+                {
+                    "player_name": "BigStack",
+                    "action_type": "check",
+                    "street": "river",
+                    "pot_size": 45.0,
+                    "remaining_stack": 185.0,
+                },
+                {
+                    "player_name": "MidStack",
+                    "action_type": "check",
+                    "street": "river",
+                    "pot_size": 45.0,
+                    "remaining_stack": 60.0,
+                },
+            ],
+            "small_blind": 1.0,
+            "big_blind": 2.0,
+            "hole_cards": {"ShortStack": "AdAc", "BigStack": "KsQh", "MidStack": "JcTd"},
+            "flop": "As7c2h",
+            "turn": "9d",
+            "river": "3s",
+        },
+        "bluff_fold": {
+            "name": "Bluff and Fold",
+            "description": "Failed bluff attempt on the river",
+            "players": [
+                {"name": "Bluffer", "stack": 100.0},  # SB
+                {"name": "CallStation", "stack": 120.0}, # BB
+            ],
+            "actions": [
+                {
+                    "player_name": "Bluffer",
+                    "action_type": "raise",
+                    "amount": 6.0,
+                    "street": "preflop",
+                    "pot_size": 9.0,
+                    "remaining_stack": 94.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "call",
+                    "amount": 4.0,
+                    "street": "preflop",
+                    "pot_size": 12.0,
+                    "remaining_stack": 114.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "check",
+                    "street": "flop",
+                    "pot_size": 12.0,
+                    "remaining_stack": 114.0,
+                },
+                {
+                    "player_name": "Bluffer",
+                    "action_type": "bet",
+                    "amount": 8.0,
+                    "street": "flop",
+                    "pot_size": 20.0,
+                    "remaining_stack": 86.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "call",
+                    "amount": 8.0,
+                    "street": "flop",
+                    "pot_size": 28.0,
+                    "remaining_stack": 106.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "check",
+                    "street": "turn",
+                    "pot_size": 28.0,
+                    "remaining_stack": 106.0,
+                },
+                {
+                    "player_name": "Bluffer",
+                    "action_type": "bet",
+                    "amount": 20.0,
+                    "street": "turn",
+                    "pot_size": 48.0,
+                    "remaining_stack": 66.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "call",
+                    "amount": 20.0,
+                    "street": "turn",
+                    "pot_size": 68.0,
+                    "remaining_stack": 86.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "check",
+                    "street": "river",
+                    "pot_size": 68.0,
+                    "remaining_stack": 86.0,
+                },
+                {
+                    "player_name": "Bluffer",
+                    "action_type": "bet",
+                    "amount": 50.0,
+                    "street": "river",
+                    "pot_size": 118.0,
+                    "remaining_stack": 16.0,
+                },
+                {
+                    "player_name": "CallStation",
+                    "action_type": "raise",
+                    "amount": 86.0,  # All-in
+                    "street": "river",
+                    "pot_size": 204.0,
+                    "remaining_stack": 0.0,
+                },
+                {
+                    "player_name": "Bluffer",
+                    "action_type": "fold",
+                    "street": "river",
+                    "pot_size": 204.0,
+                    "remaining_stack": 16.0,
+                },
+            ],
+            "small_blind": 1.0,
+            "big_blind": 2.0,
+            "hole_cards": {"Bluffer": "6h5d", "CallStation": "9s9c"},
+            "flop": "Kc8h2d",
+            "turn": "Jh",
+            "river": "4s",
+        },
+        "multi_street": {
+            "name": "Multi-street Action",
+            "description": "Action on all four streets with multiple players",
+            "players": [
+                {"name": "Tight", "stack": 100.0},      # SB
+                {"name": "Aggressive", "stack": 150.0}, # BB
+                {"name": "Loose", "stack": 80.0},       # UTG
+                {"name": "Solid", "stack": 120.0},      # BTN
+            ],
+            "actions": [
+                {
+                    "player_name": "Loose",
+                    "action_type": "call",
+                    "amount": 2.0,
+                    "street": "preflop",
+                    "pot_size": 5.0,
+                    "remaining_stack": 78.0,
+                },
+                {
+                    "player_name": "Solid",
+                    "action_type": "raise",
+                    "amount": 8.0,
+                    "street": "preflop",
+                    "pot_size": 11.0,
+                    "remaining_stack": 112.0,
+                },
+                {
+                    "player_name": "Tight",
+                    "action_type": "fold",
+                    "street": "preflop",
+                    "pot_size": 11.0,
+                    "remaining_stack": 99.0,
+                },
+                {
+                    "player_name": "Aggressive",
+                    "action_type": "call",
+                    "amount": 6.0,
+                    "street": "preflop",
+                    "pot_size": 17.0,
+                    "remaining_stack": 142.0,
+                },
+                {
+                    "player_name": "Loose",
+                    "action_type": "call",
+                    "amount": 6.0,
+                    "street": "preflop",
+                    "pot_size": 24.0,
+                    "remaining_stack": 72.0,
+                },
+                {
+                    "player_name": "Aggressive",
+                    "action_type": "check",
+                    "street": "flop",
+                    "pot_size": 24.0,
+                    "remaining_stack": 142.0,
+                },
+                {
+                    "player_name": "Loose",
+                    "action_type": "bet",
+                    "amount": 16.0,
+                    "street": "flop",
+                    "pot_size": 40.0,
+                    "remaining_stack": 56.0,
+                },
+                {
+                    "player_name": "Solid",
+                    "action_type": "raise",
+                    "amount": 48.0,
+                    "street": "flop",
+                    "pot_size": 88.0,
+                    "remaining_stack": 64.0,
+                },
+                {
+                    "player_name": "Aggressive",
+                    "action_type": "fold",
+                    "street": "flop",
+                    "pot_size": 88.0,
+                    "remaining_stack": 142.0,
+                },
+                {
+                    "player_name": "Loose",
+                    "action_type": "call",
+                    "amount": 32.0,
+                    "street": "flop",
+                    "pot_size": 120.0,
+                    "remaining_stack": 24.0,
+                },
+                {
+                    "player_name": "Loose",
+                    "action_type": "check",
+                    "street": "turn",
+                    "pot_size": 120.0,
+                    "remaining_stack": 24.0,
+                },
+                {
+                    "player_name": "Solid",
+                    "action_type": "bet",
+                    "amount": 24.0,
+                    "street": "turn",
+                    "pot_size": 144.0,
+                    "remaining_stack": 40.0,
+                },
+                {
+                    "player_name": "Loose",
+                    "action_type": "call",
+                    "amount": 24.0,  # All-in
+                    "street": "turn",
+                    "pot_size": 168.0,
+                    "remaining_stack": 0.0,
+                },
+            ],
+            "small_blind": 1.0,
+            "big_blind": 2.0,
+            "hole_cards": {"Tight": "KsQh", "Aggressive": "AhJc", "Loose": "7c7d", "Solid": "AdAs"},
+            "flop": "Ac8s7h",
+            "turn": "2d",
+            "river": "Ts",
         }
+    }
+
+
+@app.route("/api/sample-patterns", methods=["GET"])
+def get_sample_patterns():
+    """Get available sample hand patterns"""
+    try:
+        patterns = get_sample_hand_patterns()
+        # Return pattern metadata without the actual hand data
+        pattern_info = {}
+        for key, value in patterns.items():
+            pattern_info[key] = {
+                "name": value["name"],
+                "description": value["description"],
+                "player_count": len(value["players"]),
+                "has_flop": "flop" in value,
+                "has_turn": "turn" in value,
+                "has_river": "river" in value,
+            }
+        return jsonify({"patterns": pattern_info})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/create-sample", methods=["POST"])
+def create_sample():
+    """Create a sample hand"""
+    try:
+        # Get the pattern parameter from request
+        pattern = request.json.get("pattern", "standard") if request.json else "standard"
+        
+        # Get available patterns
+        patterns = get_sample_hand_patterns()
+        
+        # Validate pattern exists
+        if pattern not in patterns:
+            return jsonify({"error": f"Unknown pattern: {pattern}. Available patterns: {list(patterns.keys())}"}), 400
+        
+        # Get the sample hand data for the selected pattern
+        sample_hand_data = patterns[pattern].copy()
+        sample_hand_data["play_id"] = str(uuid.uuid4())  # Add unique play_id
 
         # Use the same validation logic as save_hand
-        # This will automatically calculate correct call amounts
         data = sample_hand_data
 
         # Validate maximum number of players
@@ -348,13 +808,22 @@ def create_sample():
         # Generate PHH
         phh_content = builder.generate_phh()
 
+        # Combine board cards into single string
+        board_string = ""
+        if "flop" in data and data["flop"]:
+            board_string += data["flop"]
+        if "turn" in data and data["turn"]:
+            board_string += data["turn"]
+        if "river" in data and data["river"]:
+            board_string += data["river"]
+
         # Save to database
         hand = Hand(
             play_id=play_id,
-            game_type="No Limit Texas Holdem",
-            board="AhKd5c",
-            small_blind=1.0,
-            big_blind=2.0,
+            game_type=data.get("game_type", "No Limit Texas Holdem"),
+            board=board_string,
+            small_blind=data.get("small_blind", 1.0),
+            big_blind=data.get("big_blind", 2.0),
             phh_content=phh_content,
         )
 
@@ -635,6 +1104,30 @@ def get_hand_replay(play_id):
             # Reset current bets for new street
             for state in player_state.values():
                 state["current_bet"] = 0
+            
+            # Add intermediate step with all players having null actions
+            street_intermediate_step = {
+                "step": current_step,
+                "description": f"{current_street.capitalize()} - waiting for action",
+                "street": current_street,
+                "players": [
+                    {
+                        "name": state["name"],
+                        "stack": state["current_stack"],
+                        "hole_cards": state["hole_cards"],
+                        "position": state["position"],
+                        "current_bet": 0,  # Reset bets for new street
+                        "is_active": state["is_active"],
+                    }
+                    for state in player_state.values()
+                ],
+                "pot_size": current_pot,
+                "board": board_cards.copy(),
+                "current_bet": 0,
+                "action": None,  # No action - clear state
+            }
+            replay_steps.append(street_intermediate_step)
+            current_step += 1
 
         # Process the action
         player_name = action.player_name

@@ -50,7 +50,7 @@ class TestStreetDetection(unittest.TestCase):
             self.assertGreater(len(actions), 0)
 
             # Check street information
-            expected_streets = ["preflop", "preflop", "preflop", "flop", "flop"]
+            expected_streets = ["preflop", "preflop", "preflop", "flop", "flop", "flop", "flop"]
             actual_streets = [action.street for action in actions]
 
             self.assertEqual(actual_streets, expected_streets)

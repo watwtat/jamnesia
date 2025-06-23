@@ -117,10 +117,11 @@ class TestReplayFunctionality(unittest.TestCase):
         for i in range(2, len(steps)):
             step = steps[i]
             self.assertIn("action", step)
-            self.assertIsNotNone(step["action"])
-            self.assertIn("player", step["action"])
-            self.assertIn("type", step["action"])
-            self.assertIn("street", step["action"])
+            # Skip intermediate steps where action is None (street transitions)
+            if step["action"] is not None:
+                self.assertIn("player", step["action"])
+                self.assertIn("type", step["action"])
+                self.assertIn("street", step["action"])
 
     def test_replay_fold_action_tracking(self):
         """Test that fold actions are properly tracked in replay"""
@@ -284,8 +285,8 @@ class TestReplayFunctionality(unittest.TestCase):
         replay_data = json.loads(replay_response.data)
         steps = replay_data["steps"]
 
-        # Should have: initial, blinds, raise, call, bet, fold = 6 steps
-        self.assertEqual(len(steps), 6)
+        # Should have: initial, blinds, raise, call, intermediate(flop), bet, fold = 7 steps
+        self.assertEqual(len(steps), 7)
 
         # Verify specific actions
         raise_step = steps[2]  # First action after blinds

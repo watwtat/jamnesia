@@ -1,3 +1,50 @@
+<style>
+.playing-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid #2c3e50;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
+    font-family: serif;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+}
+
+.playing-card::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border: 1px solid #ecf0f1;
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+.card-red {
+    color: #e74c3c;
+}
+
+.card-black {
+    color: #2c3e50;
+}
+
+.card-back {
+    background: linear-gradient(45deg, #3498db 25%, #2980b9 25%, #2980b9 50%, #3498db 50%, #3498db 75%, #2980b9 75%, #2980b9);
+    background-size: 8px 8px;
+    color: white;
+    border-color: #2980b9;
+}
+
+.card-placeholder {
+    background: linear-gradient(145deg, #ecf0f1 0%, #bdc3c7 100%);
+    border: 2px dashed #95a5a6;
+    color: #7f8c8d;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+
 <div class="space-y-6" id="hand-replay-container">
     <!-- Replay Controls -->
     <div class="bg-gray-100 rounded-lg p-4">
@@ -5,6 +52,13 @@
             <h4 class="font-bold text-lg">Hand Replay</h4>
             <div class="text-sm text-gray-600">
                 Step <span id="current-step">0</span> of <span id="total-steps">0</span>
+            </div>
+        </div>
+        
+        <!-- Street Display -->
+        <div class="flex justify-center mb-2">
+            <div id="street-display" class="bg-blue-600 text-white rounded-lg px-4 py-1 shadow-lg">
+                <div class="text-sm font-bold text-center">Preflop</div>
             </div>
         </div>
         
@@ -59,6 +113,7 @@
             
             <!-- Table Edge (Inner border) -->
             <div class="absolute inset-2 rounded-full border-4 border-yellow-600 opacity-60"></div>
+            
             
             <!-- Board Cards -->
             <div class="absolute top-16 left-1/2 transform -translate-x-1/2">
@@ -116,6 +171,7 @@ class HandReplay {
         this.potDisplay = document.getElementById('pot-display');
         this.boardCards = document.getElementById('board-cards');
         this.playersContainer = document.getElementById('players-container');
+        this.streetDisplay = document.getElementById('street-display');
     }
     
     bindEvents() {
@@ -215,6 +271,9 @@ class HandReplay {
         // Update pot display
         this.potDisplay.textContent = step.pot_size;
         
+        // Update street display
+        this.updateStreetDisplay(step.street);
+        
         // Update board cards
         this.updateBoardCards(step.board);
         
@@ -228,6 +287,27 @@ class HandReplay {
         this.lastBtn.disabled = this.currentStep === this.steps.length - 1;
     }
     
+    updateStreetDisplay(street) {
+        const streetNames = {
+            'preflop': 'Preflop',
+            'flop': 'Flop',
+            'turn': 'Turn',
+            'river': 'River'
+        };
+        
+        const displayName = streetNames[street] || street.charAt(0).toUpperCase() + street.slice(1);
+        this.streetDisplay.innerHTML = `<div class="text-sm font-bold text-center">${displayName}</div>`;
+        
+        // ストリート変更時のアニメーション効果
+        const prevStep = this.currentStep > 0 ? this.steps[this.currentStep - 1] : null;
+        if (prevStep && prevStep.street !== street) {
+            this.streetDisplay.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.streetDisplay.classList.remove('animate-pulse');
+            }, 1500);
+        }
+    }
+    
     updateBoardCards(board) {
         this.boardCards.innerHTML = '';
         
@@ -237,11 +317,16 @@ class HandReplay {
             
             if (i < board.length && board[i]) {
                 // Show actual card
-                cardElement.className = 'bg-white border-2 border-gray-800 rounded-lg w-12 h-16 flex items-center justify-center font-bold text-sm shadow-md';
-                cardElement.textContent = board[i];
+                const { displayText, colorClass } = this.formatCard(board[i]);
+                cardElement.className = `playing-card ${colorClass} flex items-center justify-center text-sm`;
+                cardElement.style.width = '32px';
+                cardElement.style.height = '40px';
+                cardElement.innerHTML = displayText;
             } else {
                 // Show empty slot
-                cardElement.className = 'bg-gray-200 border-2 border-gray-300 rounded-lg w-12 h-16 flex items-center justify-center text-gray-400 text-xs';
+                cardElement.className = 'playing-card card-placeholder flex items-center justify-center text-sm';
+                cardElement.style.width = '32px';
+                cardElement.style.height = '40px';
                 cardElement.textContent = '?';
             }
             
@@ -249,9 +334,179 @@ class HandReplay {
         }
     }
     
+    formatCard(card) {
+        if (!card || card.length < 2) return { displayText: card, colorClass: 'card-black' };
+        
+        const rank = card.slice(0, -1);
+        const suit = card.slice(-1).toLowerCase();
+        
+        let suitSymbol = '';
+        let colorClass = 'card-black';
+        
+        switch(suit) {
+            case 'h':
+                suitSymbol = '♥';
+                colorClass = 'card-red';
+                break;
+            case 'd':
+                suitSymbol = '♦';
+                colorClass = 'card-red';
+                break;
+            case 'c':
+                suitSymbol = '♣';
+                colorClass = 'card-black';
+                break;
+            case 's':
+                suitSymbol = '♠';
+                colorClass = 'card-black';
+                break;
+            default:
+                suitSymbol = suit.toUpperCase();
+        }
+        
+        const displayText = `<div style="line-height: 1; display: flex; flex-direction: column; align-items: center;">
+            <span style="font-size: 0.9em;">${rank}</span>
+            <span style="font-size: 1.1em;">${suitSymbol}</span>
+        </div>`;
+        
+        return { displayText, colorClass };
+    }
+
+    isButtonPlayer(player, players) {
+        const playerCount = players.length;
+        
+        if (playerCount === 2) {
+            // ヘッズアップ: SBがボタン
+            return player.position === 'SB';
+        } else if (playerCount === 3) {
+            // 3人: BTNまたはUTGがボタン（データによる）
+            return player.position === 'BTN' || (player.position === 'UTG' && !players.some(p => p.position === 'BTN'));
+        } else {
+            // 4人以上: 明示的なBTN
+            return player.position === 'BTN';
+        }
+    }
+
+    getActionText(player, players) {
+        // フォールドの判定
+        if (player.is_folded) {
+            return 'Fold';
+        }
+        
+        // 現在のステップを取得してプリフロップかどうか判定
+        const currentStep = this.steps[this.currentStep];
+        const isPreflop = !currentStep.board || currentStep.board.length === 0;
+        
+        // このプレイヤーが現在のステップでアクションを取ったかどうかを判定
+        const currentAction = currentStep.action;
+        const isCurrentActionPlayer = currentAction && currentAction.player === player.name;
+        
+        // 現在のステップでアクションを取ったプレイヤーの場合、そのアクションを表示
+        if (isCurrentActionPlayer && currentAction) {
+            switch (currentAction.type) {
+                case 'fold':
+                    return 'Fold';
+                case 'check':
+                    return 'Check';
+                case 'call':
+                    return 'Call';
+                case 'bet':
+                    return 'Bet';
+                case 'raise':
+                    return 'Raise';
+                case 'all_in':
+                    return 'All-in';
+                default:
+                    return 'Bet';
+            }
+        }
+        
+        // ストリートが変わったかどうかをチェック
+        const currentStreet = currentStep.street;
+        let streetChanged = false;
+        if (this.currentStep > 0) {
+            const prevStep = this.steps[this.currentStep - 1];
+            streetChanged = prevStep.street !== currentStreet;
+        }
+        
+        // ストリートが変わった場合、アクション表示をクリア（フォールドは除く）
+        if (streetChanged && !player.is_folded) {
+            return null;
+        }
+        
+        // アクションしていない場合は、このプレイヤーの最後のアクションを探す
+        // 現在のステップから過去にさかのぼって、このプレイヤーの最後のアクションを見つける
+        for (let i = this.currentStep - 1; i >= 0; i--) {
+            const step = this.steps[i];
+            const stepStreet = step.street;
+            
+            // ストリートが変わったら検索を停止（フォールドは例外）
+            if (stepStreet !== currentStreet && !player.is_folded) {
+                break;
+            }
+            
+            // このステップでプレイヤーがアクションしていた場合
+            if (step.action && step.action.player === player.name) {
+                switch (step.action.type) {
+                    case 'fold':
+                        return 'Fold';
+                    case 'check':
+                        return 'Check';
+                    case 'call':
+                        return 'Call';
+                    case 'bet':
+                        return 'Bet';
+                    case 'raise':
+                        return 'Raise';
+                    case 'all_in':
+                        return 'All-in';
+                    default:
+                        return 'Bet';
+                }
+            }
+        }
+        
+        // ブラインドの判定（プリフロップでアクション履歴がない場合）
+        if (isPreflop && player.current_bet > 0) {
+            if (player.position === 'SB') {
+                return 'Small Blind';
+            }
+            if (player.position === 'BB') {
+                return 'Big Blind';
+            }
+        }
+        
+        return null;
+    }
+
     updatePlayers(players) {
         // Position players around the elliptical table
         this.playersContainer.innerHTML = '';
+        
+        // Validate BTN position based on player count
+        const playerCount = players.length;
+        const positions = players.map(p => p.position);
+        
+        let btnPlayer = null;
+        if (playerCount === 2) {
+            // ヘッズアップ: SBがBTNでもある
+            btnPlayer = players.find(p => p.position === 'SB');
+            if (!btnPlayer) {
+                console.error('In heads-up, SB (who is also BTN) not found:', positions);
+            }
+        } else if (playerCount === 3) {
+            // 3人: UTGがBTNでもある（または明示的にBTNが存在）
+            btnPlayer = players.find(p => p.position === 'BTN' || p.position === 'UTG');
+            if (!btnPlayer) {
+                console.error('In 3-player game, BTN/UTG not found:', positions);
+            }
+        } else {
+            // 4人以上: 明示的なBTNが必要
+            btnPlayer = players.find(p => p.position === 'BTN');
+            if (!btnPlayer) {
+                console.error('BTN position not found among players:', positions);
+            }
+        }
         
         // Table dimensions (matching CSS)
         const tableWidth = 600;
@@ -285,21 +540,27 @@ class HandReplay {
                 const cards = player.hole_cards.match(/.{1,2}/g) || [];
                 holeCardsHtml = `
                     <div class="flex justify-center space-x-1 mb-2">
-                        ${cards.map(card => `
-                            <div class="bg-white border border-gray-800 rounded text-xs px-1 py-0.5 font-mono text-black shadow-sm" style="min-width: 20px;">
-                                ${card}
-                            </div>
-                        `).join('')}
+                        ${cards.map(card => {
+                            const { displayText, colorClass } = this.formatCard(card);
+                            return `
+                                <div class="playing-card ${colorClass} text-sm" style="min-width: 32px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    ${displayText}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
             
             playerElement.innerHTML = `
                 <div class="text-xs font-bold mb-1">${player.name}</div>
-                <div class="text-xs text-gray-600 mb-1">${player.position}</div>
+                <div class="text-xs text-gray-600 mb-1 flex items-center justify-center">
+                    ${player.position}
+                    ${this.isButtonPlayer(player, players) ? '<span class="ml-1 bg-yellow-400 text-black rounded-full text-xs px-1.5 py-0.5 font-bold" style="box-shadow: 0 3px 6px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6); border: 1px solid #d4a017;">D</span>' : ''}
+                </div>
                 ${holeCardsHtml}
                 <div class="text-xs font-bold text-green-600">$${player.stack}</div>
-                ${player.current_bet > 0 ? `<div class="text-xs text-red-600 font-bold mt-1">Bet: $${player.current_bet}</div>` : ''}
+                ${this.getActionText(player, players) ? `<div class="text-xs ${this.getActionText(player, players) === 'Fold' ? 'text-gray-500' : this.getActionText(player, players) === 'Check' ? 'text-blue-600' : 'text-red-600'} font-bold mt-1">${this.getActionText(player, players)}${player.current_bet > 0 ? ': $' + player.current_bet : ''}</div>` : ''}
             `;
             
             this.playersContainer.appendChild(playerElement);

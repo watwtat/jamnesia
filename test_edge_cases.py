@@ -181,9 +181,10 @@ class TestEdgeCases(unittest.TestCase):
             hand = Hand.query.filter_by(play_id=result["play_id"]).first()
             players_db = Player.query.filter_by(hand_id=hand.id).all()
 
-            # All 9 should have Position enum values
+            # All 9 should have valid position strings
+            expected_positions = ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
             for player in players_db:
-                self.assertIn(player.position, [p.value for p in Position])
+                self.assertIn(player.position, expected_positions)
 
     def test_too_many_players_rejected(self):
         """Test that 10 or more players are rejected"""

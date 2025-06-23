@@ -16,10 +16,20 @@ Try it: Create a sample hand and click the "🎬 Replay" button!
 ## Features
 
 - **Hand Input**: Web form interface for entering poker hands with players, stacks, hole cards, board cards, and actions
-- **Hand Replay**: Step-by-step visual replay of poker hands with interactive controls
+- **Interactive Hand Replay**: Step-by-step visual replay of poker hands with realistic card display
+  - Realistic playing cards with suit symbols (♥♦♣♠) and proper colors
+  - Dealer button (BTN) markers with 3D styling
+  - Accurate action detection (Call, Bet, Raise, Check, Fold, Blinds)
+  - Street transitions with intermediate steps for better understanding
+  - Multiple sample hand patterns for various poker scenarios
 - **PHH Generation**: Generates standard PHH (Poker Hand History) format files
 - **Database Storage**: Normalized SQLite schema for efficient storage and retrieval
-- **Sample Data**: Quick sample hand creation for testing and demonstration
+- **Multiple Sample Patterns**: Pre-configured hands for different scenarios
+  - Standard 3-way hand with preflop and flop action
+  - Heads-up battle with aggressive multi-street play
+  - All-in showdown with short stack dynamics
+  - Bluff and fold scenario with river action
+  - Multi-street action with 4 players across all streets
 - **Responsive UI**: Clean interface built with Tailwind CSS and HTMX
 - **RESTful API**: JSON endpoints for integration with other tools
 
@@ -88,17 +98,26 @@ Try it: Create a sample hand and click the "🎬 Replay" button!
 ### Hand Replay Experience
 
 - **Interactive Controls**: Play, pause, step forward/backward, jump to first/last
-- **Visual Table**: See players positioned around a poker table
-- **Real-time Updates**: Watch pot sizes, stack changes, and board card progression
-- **Action Descriptions**: Clear descriptions of each action as it happens
+- **Visual Table**: See players positioned around an elliptical poker table
+- **Realistic Cards**: Playing cards with proper suit symbols (♥♦♣♠) and red/black colors
+- **Dealer Button**: 3D-styled button markers that correctly handle heads-up and multi-player games
+- **Real-time Updates**: Watch pot sizes, stack changes, and board card progression through all streets
+- **Action Descriptions**: Clear, accurate action labels (Call, Bet, Raise, Check, Fold, Blinds)
+- **Street Transitions**: Smooth transitions between preflop, flop, turn, and river with intermediate steps
 - **Speed Control**: Adjust replay speed from slow (2s) to fast (0.5s)
 - **State Tracking**: Accurate tracking of player stacks, bets, and pot throughout the hand
 
-### Create Sample Hand
+### Sample Hand Patterns
 
-- Click "Create Sample Hand" on the main page for a quick demo
-- This creates a pre-configured hand with Alice, Bob, and Charlie
-- Perfect for testing the replay functionality
+Choose from multiple pre-configured scenarios:
+
+- **Standard**: 3-way hand with preflop raise and flop action
+- **Heads-up Battle**: Aggressive 2-player action across multiple streets with all-in finish
+- **All-in Showdown**: Short stack goes all-in preflop, others call and check down
+- **Bluff and Fold**: Failed bluff attempt with river action and fold to raise
+- **Multi-street Action**: 4-player hand with action on all streets and turn all-in
+
+Each pattern demonstrates different poker concepts and provides comprehensive testing of the replay system.
 
 ## API Endpoints
 
@@ -152,10 +171,22 @@ GET /api/hands/{play_id}/replay-ui
 ```
 Returns HTML interface for hand replay with interactive controls.
 
+### Get Sample Patterns
+```http
+GET /api/sample-patterns
+```
+Returns available sample hand patterns with metadata.
+
 ### Create Sample Hand
 ```http
 POST /api/create-sample
+Content-Type: application/json
+
+{
+  "pattern": "heads_up"  // Optional: "standard", "heads_up", "all_in", "bluff_fold", "multi_street"
+}
 ```
+Creates a sample hand using the specified pattern (defaults to "standard").
 
 ## Database Schema
 
@@ -226,15 +257,17 @@ python -m unittest test_poker_engine.py # Run specific tests
 coverage run run_tests.py && coverage html # Generate coverage report
 ```
 
-**Test Coverage (90 tests total):**
+**Test Coverage (90+ tests total):**
 - **Poker Engine Tests (19 tests)**: PHH generation, hand building, edge cases
 - **Database Models Tests (14 tests)**: Model creation, relationships, constraints, replay fields
 - **Flask Application Tests (25 tests)**: API endpoints, workflows, error handling, HTML templates
 - **Position Enum Tests (15 tests)**: Position handling, validation, display names
 - **Position Template Tests (4 tests)**: Template rendering, position display
-- **Hand Replay Tests (13 tests)**: Replay API, state progression, UI rendering, integration
+- **Hand Replay Tests (13+ tests)**: Replay API, state progression, UI rendering, integration
+- **Edge Case Tests**: Negative stacks, fractional amounts, invalid players, large amounts
+- **Street Detection Tests**: Multi-street action validation, street progression
 
-All tests use isolated temporary databases and pass 100% of the time.
+All tests use isolated temporary databases and pass 100% of the time with comprehensive coverage of poker scenarios.
 
 ### Database Migration
 The application automatically creates tables on first run. For production deployments with PostgreSQL:
