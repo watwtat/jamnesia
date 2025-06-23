@@ -277,9 +277,25 @@ The application automatically creates tables on first run. For production deploy
 
 ## Deployment
 
+### Quick Deploy to Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+**One-click deployment:**
+1. Click the button above
+2. Connect your GitHub account
+3. Fork this repository
+4. Configure environment variables:
+   - `SECRET_KEY`: Auto-generated secure key
+   - `DATABASE_URL`: `sqlite:///data/jamnesia.db` (default)
+5. Deploy!
+
+See [RENDER_DEPLOY.md](RENDER_DEPLOY.md) for detailed instructions.
+
 ### Environment Variables
 - `DATABASE_URL`: Database connection string (default: SQLite)
 - `SECRET_KEY`: Flask secret key for sessions
+- `PORT`: Application port (auto-set by hosting platforms)
 
 ### Docker
 ```dockerfile

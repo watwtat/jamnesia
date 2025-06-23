@@ -85,6 +85,9 @@ default_db_path = "sqlite:///jamnesia.db"
 if os.path.exists("/app/data"):
     # Container environment - use absolute path
     default_db_path = "sqlite:////app/data/jamnesia.db"
+elif os.path.exists("data"):
+    # Render environment - use relative path to data directory
+    default_db_path = "sqlite:///data/jamnesia.db"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", default_db_path
@@ -1212,4 +1215,5 @@ def get_hand_replay(play_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(debug=True, host="0.0.0.0", port=port)

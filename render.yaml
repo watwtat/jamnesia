@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: jamnesia
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && pip install gunicorn && mkdir -p data
+    startCommand: gunicorn --config gunicorn.conf.py app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:///data/jamnesia.db
+    
+    # Health check
+    healthCheckPath: /
+
+    # Auto-deploy on push
+    autoDeploy: true
+
+    # Custom domain support
+    # domains:
+    #   - jamnesia.yourdomain.com
