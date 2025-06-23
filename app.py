@@ -80,8 +80,14 @@ def process_hand_actions(players_data, actions, small_blind, big_blind):
 app = Flask(__name__)
 
 # データベース設定
+# Production: Use persistent volume mount for SQLite
+default_db_path = "sqlite:///jamnesia.db"
+if os.path.exists("/app/data"):
+    # Container environment - use absolute path
+    default_db_path = "sqlite:////app/data/jamnesia.db"
+
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "sqlite:///jamnesia.db"
+    "DATABASE_URL", default_db_path
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")

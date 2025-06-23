@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  jamnesia:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-your-production-secret-key-here}
+      - DATABASE_URL=sqlite:///data/jamnesia.db
+    volumes:
+      # Persistent volume for SQLite database
+      - jamnesia_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  jamnesia_data:
+    driver: local
+
+# For future PostgreSQL migration:
+# 
+# services:
+#   jamnesia:
+#     build: .
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - FLASK_ENV=production
+#       - SECRET_KEY=${SECRET_KEY}
+#       - DATABASE_URL=postgresql://user:password@postgres:5432/jamnesia
+#     depends_on:
+#       - postgres
+#     restart: unless-stopped
+#   
+#   postgres:
+#     image: postgres:15-alpine
+#     environment:
+#       - POSTGRES_DB=jamnesia
+#       - POSTGRES_USER=user
+#       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     restart: unless-stopped
+# 
+# volumes:
+#   postgres_data:
+#     driver: local

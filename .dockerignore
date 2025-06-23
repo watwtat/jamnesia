@@ -1,0 +1,89 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test files
+test_*.py
+*_test.py
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Development database (exclude existing dev data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+app.log
+logs/
+
+# Documentation
+docs/
+*.md
+README.md
+
+# Development scripts
+run_tests.py
+Makefile
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Environment files (may contain secrets)
+.env
+.env.local
+.env.production
+
+# Node modules (if any frontend tools)
+node_modules/
+
+# Coverage reports
+.nyc_output/
+
+# Jupyter notebooks
+*.ipynb
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
