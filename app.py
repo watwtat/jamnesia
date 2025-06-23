@@ -750,7 +750,8 @@ def create_sample():
     """Create a sample hand"""
     try:
         # Get the pattern parameter from request
-        pattern = request.json.get("pattern", "standard") if request.json else "standard"
+        data = request.get_json(force=True, silent=True) or {}
+        pattern = data.get("pattern", "standard")
         
         # Get available patterns
         patterns = get_sample_hand_patterns()

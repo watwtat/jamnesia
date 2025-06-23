@@ -63,6 +63,8 @@ class TestApp(unittest.TestCase):
         """Test sample hand creation endpoint"""
         response = self.client.post("/api/create-sample")
 
+        if response.status_code != 200:
+            print(f"Error response: {response.data.decode()}")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
