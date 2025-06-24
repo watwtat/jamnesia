@@ -229,9 +229,12 @@ def save_hand():
         db.session.flush()  # Get ID
 
         # Save player information with position strings
-        positions = get_poker_positions(len(players_data))
         for i, player_data in enumerate(players_data):
-            position = positions[i]
+            # Use position from frontend if provided, otherwise calculate
+            position = player_data.get("position")
+            if not position:
+                positions = get_poker_positions(len(players_data))
+                position = positions[i]
             player = Player(
                 hand_id=hand.id,
                 name=player_data["name"],
@@ -866,9 +869,12 @@ def create_sample():
         db.session.flush()
 
         # Save player information with position strings
-        positions = get_poker_positions(len(players_data))
         for i, player_data in enumerate(players_data):
-            position = positions[i]
+            # Use position from frontend if provided, otherwise calculate
+            position = player_data.get("position")
+            if not position:
+                positions = get_poker_positions(len(players_data))
+                position = positions[i]
             player = Player(
                 hand_id=hand.id,
                 name=player_data["name"],

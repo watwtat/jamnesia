@@ -378,12 +378,8 @@ class HandReplay {
         if (playerCount === 2) {
             // ヘッズアップ: SBがボタン
             return player.position === 'SB';
-        } else if (playerCount === 3) {
-            // 3人: UTGがボタン（SBの右隣）
-            return player.position === 'UTG';
         } else {
-            // 4人以上: BTNポジションが明示的に存在
-            // BTNはSBの右隣（時計回りでSBの前）
+            // 3人以上: BTNポジションが明示的に存在
             return player.position === 'BTN';
         }
     }
@@ -495,14 +491,8 @@ class HandReplay {
             if (!btnPlayer) {
                 console.error('In heads-up, SB (who is also BTN) not found:', positions);
             }
-        } else if (playerCount === 3) {
-            // 3人: UTGがBTN（SBの右隣）
-            btnPlayer = players.find(p => p.position === 'UTG');
-            if (!btnPlayer) {
-                console.error('In 3-player game, UTG (BTN) not found:', positions);
-            }
         } else {
-            // 4人以上: 明示的なBTNが必要（SBの右隣）
+            // 3人以上: 明示的なBTNが必要
             btnPlayer = players.find(p => p.position === 'BTN');
             if (!btnPlayer) {
                 console.error('BTN position not found among players:', positions);

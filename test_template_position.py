@@ -58,10 +58,10 @@ class TestPositionTemplateRendering(unittest.TestCase):
         # Check that position names are rendered correctly in HTML
         html_content = response.data.decode("utf-8")
 
-        # Should contain position names instead of numbers
+        # Should contain position names instead of numbers (3 players: SB, BB, BTN)
         self.assertIn("SB", html_content)  # Small Blind
         self.assertIn("BB", html_content)  # Big Blind
-        self.assertIn("UTG", html_content)  # Under The Gun
+        self.assertIn("BTN", html_content)  # Button
 
         # Should NOT contain raw position numbers like "Position 0"
         self.assertNotIn("Position 0", html_content)

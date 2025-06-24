@@ -47,6 +47,21 @@
                     </svg>
                     Players
                 </h3>
+                
+                <!-- Player Count Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Number of Players</label>
+                    <select id="player-count-select" class="form-input w-auto" onchange="updatePlayerCount()">
+                        <option value="2">2 Players (Heads-up)</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="5">5 Players</option>
+                        <option value="6" selected>6 Players</option>
+                        <option value="7">7 Players</option>
+                        <option value="8">8 Players</option>
+                        <option value="9">9 Players</option>
+                    </select>
+                </div>
                 <div id="players-container">
                     <div class="player-row bg-white rounded-lg p-4 mb-4 border border-gray-200">
                         <div class="grid md:grid-cols-5 gap-4">
@@ -57,17 +72,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Position</label>
-                                <select name="player_position_0" class="form-input">
-                                    <option value="SB">Small Blind</option>
-                                    <option value="BB">Big Blind</option>
-                                    <option value="UTG">UTG</option>
-                                    <option value="UTG1">UTG+1</option>
-                                    <option value="MP">Middle Position</option>
-                                    <option value="LJ">Lojack</option>
-                                    <option value="HJ">Hijack</option>
-                                    <option value="CO">Cutoff</option>
-                                    <option value="BTN">Button</option>
-                                </select>
+                                <div class="form-input bg-gray-100 text-gray-700 font-medium" name="player_position_0">SB</div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Stack</label>
@@ -86,12 +91,6 @@
                         </div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="addPlayer()">
-                    <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    Add Player
-                </button>
             </div>
             
             <!-- Board Cards -->
@@ -186,67 +185,114 @@
 let playerCount = 1;
 let actionCount = 1;
 
-function addPlayer() {
+// Position mapping function (matching backend logic)
+function getPokerPositions(playerCount) {
+    if (playerCount === 2) {
+        return ["SB", "BB"];
+    } else if (playerCount === 3) {
+        return ["SB", "BB", "BTN"];
+    } else if (playerCount === 4) {
+        return ["SB", "BB", "UTG", "BTN"];
+    } else if (playerCount === 5) {
+        return ["SB", "BB", "UTG", "CO", "BTN"];
+    } else if (playerCount === 6) {
+        return ["SB", "BB", "UTG", "MP", "CO", "BTN"];
+    } else if (playerCount === 7) {
+        return ["SB", "BB", "UTG", "MP", "LJ", "CO", "BTN"];
+    } else if (playerCount === 8) {
+        return ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "CO", "BTN"];
+    } else if (playerCount === 9) {
+        return ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"];
+    } else {
+        // For 10+ players
+        const baseStart = ["SB", "BB", "UTG", "UTG1"];
+        const additionalMp = Array.from({length: playerCount - 6}, (_, i) => `MP${i + 1}`);
+        const baseEnd = ["MP", "LJ", "HJ", "CO", "BTN"];
+        return baseStart.concat(additionalMp).concat(baseEnd);
+    }
+}
+
+// Position display names
+function getPositionDisplayName(position) {
+    const displayNames = {
+        'SB': 'Small Blind',
+        'BB': 'Big Blind',
+        'UTG': 'UTG',
+        'UTG1': 'UTG+1',
+        'MP': 'Middle Position',
+        'LJ': 'Lojack',
+        'HJ': 'Hijack',
+        'CO': 'Cutoff',
+        'BTN': 'Button'
+    };
+    
+    if (position.startsWith('MP') && position.length > 2) {
+        return `Middle Position ${position.slice(2)}`;
+    }
+    
+    return displayNames[position] || position;
+}
+
+// Update player count and regenerate player forms
+function updatePlayerCount() {
+    const selectedCount = parseInt(document.getElementById('player-count-select').value);
     const container = document.getElementById('players-container');
-    const newRow = document.createElement('div');
-    newRow.className = 'player-row bg-white rounded-lg p-4 mb-4 border border-gray-200';
-    newRow.innerHTML = `
-        <div class="grid md:grid-cols-5 gap-4">
-            <div class="relative">
-                <label class="block text-sm font-medium mb-2">Player Name</label>
-                <input type="text" name="player_name_${playerCount}" placeholder="Enter name" class="form-input player-name-input" required autocomplete="off">
-                <div class="autocomplete-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-40 overflow-y-auto"></div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-2">Position</label>
-                <select name="player_position_${playerCount}" class="form-input">
-                    <option value="SB">Small Blind</option>
-                    <option value="BB">Big Blind</option>
-                    <option value="UTG">UTG</option>
-                    <option value="UTG1">UTG+1</option>
-                    <option value="MP">Middle Position</option>
-                    <option value="LJ">Lojack</option>
-                    <option value="HJ">Hijack</option>
-                    <option value="CO">Cutoff</option>
-                    <option value="BTN">Button</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-2">Stack</label>
-                <input type="number" name="player_stack_${playerCount}" value="100" step="0.5" class="form-input player-stack-input" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-2">Hole Cards</label>
-                <div class="flex space-x-1">
-                    <input type="text" name="player_cards_${playerCount}" placeholder="AsKh" maxlength="4" class="form-input card-input text-center font-mono" onchange="validateCard(this)">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this)">🃏</button>
+    const positions = getPokerPositions(selectedCount);
+    
+    // Clear existing players
+    container.innerHTML = '';
+    
+    // Generate new player forms with correct positions
+    for (let i = 0; i < selectedCount; i++) {
+        const position = positions[i];
+        const positionDisplay = getPositionDisplayName(position);
+        
+        const playerRow = document.createElement('div');
+        playerRow.className = 'player-row bg-white rounded-lg p-4 mb-4 border border-gray-200';
+        playerRow.innerHTML = `
+            <div class="grid md:grid-cols-5 gap-4">
+                <div class="relative">
+                    <label class="block text-sm font-medium mb-2">Player Name</label>
+                    <input type="text" name="player_name_${i}" placeholder="Enter name" class="form-input player-name-input" required autocomplete="off">
+                    <div class="autocomplete-dropdown absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-40 overflow-y-auto"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Position</label>
+                    <div class="form-input bg-gray-100 text-gray-700 font-medium position-display" data-position="${position}">${positionDisplay}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Stack</label>
+                    <input type="number" name="player_stack_${i}" value="100" step="0.5" class="form-input player-stack-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Hole Cards</label>
+                    <div class="flex space-x-1">
+                        <input type="text" name="player_cards_${i}" placeholder="AsKh" maxlength="4" class="form-input card-input text-center font-mono" onchange="validateCard(this)">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="showCardPicker(this)">🃏</button>
+                    </div>
+                </div>
+                <div class="flex items-end">
+                    ${selectedCount > 2 ? '<button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>' : '<div></div>'}
                 </div>
             </div>
-            <div class="flex items-end">
-                <button type="button" class="btn btn-secondary" onclick="removePlayer(this)">Remove</button>
-            </div>
-        </div>
-    `;
-    container.appendChild(newRow);
+        `;
+        container.appendChild(playerRow);
+        
+        // Setup autocomplete for the new player input
+        const playerInput = playerRow.querySelector('.player-name-input');
+        setupAutocomplete(playerInput);
+    }
     
-    // Setup autocomplete for the new player input
-    const newPlayerInput = newRow.querySelector('.player-name-input');
-    setupAutocomplete(newPlayerInput);
+    // Update player count
+    playerCount = selectedCount;
     
     // Update action player dropdowns
     updateActionPlayerDropdowns();
     
-    playerCount++;
+    // Validate form
+    validateForm();
 }
 
-function removePlayer(button) {
-    const playerRows = document.querySelectorAll('.player-row');
-    if (playerRows.length > 1) {
-        button.closest('.player-row').remove();
-        updateActionPlayerDropdowns(); // Update dropdowns when player is removed
-        validateForm();
-    }
-}
 
 function addAction() {
     const container = document.getElementById('actions-container');
@@ -671,14 +717,8 @@ function updateActionPlayerDropdowns() {
 document.addEventListener('DOMContentLoaded', function() {
     loadPlayerNames();
     
-    // Setup autocomplete for initial player input
-    const initialPlayerInput = document.querySelector('.player-name-input');
-    if (initialPlayerInput) {
-        setupAutocomplete(initialPlayerInput);
-    }
-    
-    // Update action player dropdowns when players change
-    updateActionPlayerDropdowns();
+    // Initialize player forms based on default selection
+    updatePlayerCount();
     
     // Setup action calculation
     document.addEventListener('change', function(e) {
@@ -705,6 +745,9 @@ document.getElementById('hand-form').addEventListener('submit', function(e) {
     const players = [];
     const holeCards = {};
     
+    // Get positions for current player count
+    const positions = getPokerPositions(playerCount);
+    
     for (let i = 0; i < playerCount; i++) {
         const name = formData.get(`player_name_${i}`);
         const stack = formData.get(`player_stack_${i}`);
@@ -713,7 +756,8 @@ document.getElementById('hand-form').addEventListener('submit', function(e) {
         if (name && stack) {
             players.push({
                 name: name,
-                stack: parseFloat(stack)
+                stack: parseFloat(stack),
+                position: positions[i] // Add position information
             });
             
             if (cards) {

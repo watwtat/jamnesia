@@ -577,9 +577,9 @@ class TestPositionIntegration(unittest.TestCase):
             bob = player_dict["Bob"]
             self.assertEqual(bob.position, "BB")
 
-            # Charlie should be UTG
+            # Charlie should be BTN (3 players: SB, BB, BTN)
             charlie = player_dict["Charlie"]
-            self.assertEqual(charlie.position, "UTG")
+            self.assertEqual(charlie.position, "BTN")
 
     def test_position_enum_in_regular_hand_saving(self):
         """Test that Position enum is used correctly in regular hand saving"""
@@ -613,8 +613,8 @@ class TestPositionIntegration(unittest.TestCase):
             players = Player.query.all()
             self.assertEqual(len(players), 4)
 
-            # Verify positions are string values
-            expected_positions = ["SB", "BB", "UTG", "UTG1"]
+            # Verify positions are string values (4 players: SB, BB, UTG, BTN)
+            expected_positions = ["SB", "BB", "UTG", "BTN"]
             player_positions = sorted([p.position for p in players])
             expected_positions_sorted = sorted(expected_positions)
             self.assertEqual(player_positions, expected_positions_sorted)
@@ -632,8 +632,8 @@ class TestPositionIntegration(unittest.TestCase):
                 # Test that position is stored as string
                 self.assertIsInstance(player.position, str)
 
-                # Verify it's one of the expected position values
-                expected_positions = ["SB", "BB", "UTG"]
+                # Verify it's one of the expected position values (3 players: SB, BB, BTN)
+                expected_positions = ["SB", "BB", "BTN"]
                 self.assertIn(player.position, expected_positions)
 
     def test_position_enum_with_many_players(self):
