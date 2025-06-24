@@ -35,73 +35,172 @@ def get_poker_positions(player_count):
 
 
 def process_hand_actions(players_data, actions, small_blind, big_blind):
-    """Process hand actions and return processed actions with correct amounts"""
+    """Process hand actions with automatic street progression based on betting rounds.
+    Streets automatically advance when all active players have acted and betting is complete."""
     player_stacks = {p["name"]: p["stack"] for p in players_data}
-    current_bet = big_blind  # Start with big blind as current bet
     player_bets = {p["name"]: 0 for p in players_data}
     processed_actions = []
-
-    # Set initial blinds
+    current_pot = 0.0
+    players_with_actions = set()
+    
+    # Track active players (not folded)
+    active_players = set(p["name"] for p in players_data)
+    folded_players = set()
+    
+    # Street progression
+    streets = ["preflop", "flop", "turn", "river"]
+    current_street_index = 0
+    current_street = streets[current_street_index]
+    current_bet = 0
+    
+    # Set initial blinds for preflop
     if len(players_data) >= 2:
-        player_bets[players_data[0]["name"]] = small_blind
-        player_bets[players_data[1]["name"]] = big_blind
+        sb_player = players_data[0]["name"]
+        bb_player = players_data[1]["name"]
+        player_bets[sb_player] = small_blind
+        player_bets[bb_player] = big_blind
+        current_pot = small_blind + big_blind
+        current_bet = big_blind
 
-    current_street = "preflop"
+    # Track players who have acted in current street
+    players_acted_this_street = set()
+    
     for action in actions:
         player_name = action["player_name"]
         action_type = action["action_type"]
         amount = action.get("amount", 0)
-        street = action.get("street", "preflop")
 
-        # Reset bets when street changes
-        if street != current_street:
-            current_street = street
-            current_bet = 0  # Reset current bet for new street
-            for p_name in player_bets:
-                player_bets[p_name] = 0  # Reset all player bets
+        # Track players who have actions
+        players_with_actions.add(player_name)
 
-        # Validate player exists
+        # Validate player exists and is active
         if player_name not in player_stacks:
             raise ValueError(f"Player {player_name} not found")
+        if player_name in folded_players:
+            raise ValueError(f"Player {player_name} has already folded")
 
-        # Calculate actual action amount and validate
-        if action_type == "call":
-            # Calculate call amount (difference between current bet and player's current bet)
+        # Process the action
+        if action_type == "fold":
+            folded_players.add(player_name)
+            active_players.discard(player_name)
+            processed_action = {
+                "player_name": player_name,
+                "action_type": "fold",
+                "amount": 0,
+                "street": current_street,
+                "pot_size": current_pot,
+                "remaining_stack": player_stacks[player_name] - player_bets[player_name]
+            }
+            processed_actions.append(processed_action)
+
+        elif action_type == "check":
+            if current_bet > player_bets[player_name]:
+                raise ValueError(f"{player_name} cannot check when there's a bet to call")
+            processed_action = {
+                "player_name": player_name,
+                "action_type": "check",
+                "amount": 0,
+                "street": current_street,
+                "pot_size": current_pot,
+                "remaining_stack": player_stacks[player_name] - player_bets[player_name]
+            }
+            processed_actions.append(processed_action)
+
+        elif action_type == "call":
             call_amount = max(0, current_bet - player_bets[player_name])
-            # Ensure player has enough chips
             available_chips = player_stacks[player_name] - player_bets[player_name]
             actual_amount = min(call_amount, available_chips)
             player_bets[player_name] += actual_amount
-            # Store processed action with correct amount and street
-            processed_action = action.copy()
-            processed_action["amount"] = actual_amount
-            processed_action["street"] = street
+            current_pot += actual_amount
+            processed_action = {
+                "player_name": player_name,
+                "action_type": "call",
+                "amount": actual_amount,
+                "street": current_street,
+                "pot_size": current_pot,
+                "remaining_stack": player_stacks[player_name] - player_bets[player_name]
+            }
             processed_actions.append(processed_action)
 
         elif action_type in ["bet", "raise"]:
-            # For raise, the amount is the total bet, not additional
             total_bet = amount
             additional_amount = total_bet - player_bets[player_name]
-
-            # Validate bet/raise amount doesn't exceed stack
             available_chips = player_stacks[player_name] - player_bets[player_name]
+            
             if additional_amount > available_chips:
-                raise ValueError(
-                    f"{player_name} cannot bet ${total_bet} (only ${available_chips} additional available)"
-                )
-
+                raise ValueError(f"{player_name} cannot bet ${total_bet} (only ${available_chips} additional available)")
+            
             player_bets[player_name] = total_bet
             current_bet = max(current_bet, total_bet)
-            processed_action = action.copy()
-            processed_action["street"] = street
+            current_pot += additional_amount
+            processed_action = {
+                "player_name": player_name,
+                "action_type": action_type,
+                "amount": amount,
+                "street": current_street,
+                "pot_size": current_pot,
+                "remaining_stack": player_stacks[player_name] - player_bets[player_name]
+            }
             processed_actions.append(processed_action)
 
-        else:  # fold, check
-            processed_action = action.copy()
-            processed_action["street"] = street
-            processed_actions.append(processed_action)
+        # Mark player as having acted this street
+        players_acted_this_street.add(player_name)
+
+        # Check if betting round is complete and we should advance to next street
+        # Only check after each action, not during action processing
+        if should_advance_street(active_players, folded_players, players_acted_this_street, player_bets, current_bet):
+            # Advance to next street if not at river
+            if current_street_index < len(streets) - 1:
+                current_street_index += 1
+                current_street = streets[current_street_index]
+                current_bet = 0
+                # Reset player bets for new street
+                for p_name in player_bets:
+                    player_bets[p_name] = 0
+                # Reset players who acted this street
+                players_acted_this_street = set()
+
+    # Add fold actions for players who don't have any actions recorded
+    # Auto-folds are added in player order at the end
+    for player in players_data:
+        player_name = player["name"]
+        if player_name not in players_with_actions:
+            fold_action = {
+                "player_name": player_name,
+                "action_type": "fold",
+                "amount": 0,
+                "street": "preflop",  # Auto-folds are always preflop
+                "pot_size": current_pot,
+                "remaining_stack": player_stacks[player_name] - player_bets[player_name]
+            }
+            processed_actions.append(fold_action)
 
     return processed_actions
+
+
+def should_advance_street(active_players, folded_players, players_acted_this_street, player_bets, current_bet):
+    """Check if betting round is complete and should advance to next street"""
+    # If only one player remains active, hand is over
+    if len(active_players) <= 1:
+        return True
+    
+    # All active players must have acted this street
+    if not active_players.issubset(players_acted_this_street):
+        return False
+    
+    # All active players must have equal bets to current bet
+    # This ensures that all players have either called, checked, or folded
+    active_player_bets = {name: player_bets[name] for name in active_players}
+    
+    if current_bet == 0:
+        # If no betting this street, all active players should have bet 0 (all checked)
+        return all(bet == 0 for bet in active_player_bets.values())
+    else:
+        # If there's betting, all active players must match the current bet
+        # This means everyone has either called the bet/raise or folded
+        return all(bet == current_bet for bet in active_player_bets.values())
+    
+    return False
 
 app = Flask(__name__)
 

@@ -56,7 +56,7 @@ class TestStreetDetection(unittest.TestCase):
             self.assertEqual(actual_streets, expected_streets)
 
     def test_street_detection_in_custom_hand(self):
-        """Test street detection with custom hand data"""
+        """Test street detection with automatic street progression"""
         hand_data = {
             "players": [
                 {"name": "Player1", "stack": 100.0},
@@ -64,23 +64,18 @@ class TestStreetDetection(unittest.TestCase):
                 {"name": "Player3", "stack": 100.0},
             ],
             "actions": [
-                {"player_name": "Player1", "action_type": "fold", "street": "preflop"},
-                {"player_name": "Player2", "action_type": "call", "street": "preflop"},
-                {"player_name": "Player3", "action_type": "check", "street": "preflop"},
-                {
-                    "player_name": "Player2",
-                    "action_type": "bet",
-                    "amount": 5.0,
-                    "street": "flop",
-                },
-                {"player_name": "Player3", "action_type": "call", "street": "flop"},
-                {
-                    "player_name": "Player2",
-                    "action_type": "bet",
-                    "amount": 10.0,
-                    "street": "turn",
-                },
-                {"player_name": "Player3", "action_type": "fold", "street": "turn"},
+                # Preflop: Player3 calls, Player1 (SB) calls, Player2 (BB) checks
+                {"player_name": "Player3", "action_type": "call", "amount": 2.0},
+                {"player_name": "Player1", "action_type": "call", "amount": 1.0},  # SB calls
+                {"player_name": "Player2", "action_type": "check"},  # BB checks
+                # Flop: Auto-advanced after preflop complete
+                {"player_name": "Player1", "action_type": "check"},
+                {"player_name": "Player2", "action_type": "bet", "amount": 5.0},
+                {"player_name": "Player3", "action_type": "call", "amount": 5.0},
+                {"player_name": "Player1", "action_type": "fold"},
+                # Turn: Auto-advanced after flop complete
+                {"player_name": "Player2", "action_type": "bet", "amount": 10.0},
+                {"player_name": "Player3", "action_type": "fold"},
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
@@ -105,25 +100,27 @@ class TestStreetDetection(unittest.TestCase):
                 .all()
             )
 
-            # Verify we have the correct number of actions
-            self.assertEqual(len(actions), 7)
+            # Verify we have the correct number of actions (9 actions)
+            self.assertEqual(len(actions), 9)
 
-            # Check street information
+            # Check street information with automatic progression
             expected_streets = [
-                "preflop",
-                "preflop",
-                "preflop",
-                "flop",
-                "flop",
-                "turn",
-                "turn",
+                "preflop",  # Player3 call
+                "preflop",  # Player1 call  
+                "preflop",  # Player2 check
+                "flop",     # Player1 check
+                "flop",     # Player2 bet
+                "flop",     # Player3 call
+                "flop",     # Player1 fold
+                "turn",     # Player2 bet
+                "turn",     # Player3 fold
             ]
             actual_streets = [action.street for action in actions]
 
             self.assertEqual(actual_streets, expected_streets)
 
     def test_street_defaults_to_preflop(self):
-        """Test that actions without street specification default to preflop"""
+        """Test that actions without street specification work with automatic progression"""
         hand_data = {
             "players": [
                 {"name": "Player1", "stack": 100.0},
@@ -131,13 +128,14 @@ class TestStreetDetection(unittest.TestCase):
             ],
             "actions": [
                 {
-                    "player_name": "Player1",
-                    "action_type": "fold",
-                },  # No street specified
+                    "player_name": "Player1", 
+                    "action_type": "call",
+                    "amount": 1.0
+                },  # SB calls (no street specified)
                 {
                     "player_name": "Player2",
                     "action_type": "check",
-                },  # No street specified
+                },  # BB checks (no street specified)
             ],
             "small_blind": 1.0,
             "big_blind": 2.0,
