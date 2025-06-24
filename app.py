@@ -8,6 +8,32 @@ from models import Action, Hand, Player, Position, db
 from poker_engine import PokerHandBuilder
 
 
+def get_poker_positions(player_count):
+    """Get proper poker positions based on player count with BTN always last"""
+    if player_count == 2:
+        return ["SB", "BB"]  # SB is also BTN in heads-up
+    elif player_count == 3:
+        return ["SB", "BB", "BTN"]  # BTN is UTG in 3-handed
+    elif player_count == 4:
+        return ["SB", "BB", "UTG", "BTN"]
+    elif player_count == 5:
+        return ["SB", "BB", "UTG", "CO", "BTN"]
+    elif player_count == 6:
+        return ["SB", "BB", "UTG", "MP", "CO", "BTN"]
+    elif player_count == 7:
+        return ["SB", "BB", "UTG", "MP", "LJ", "CO", "BTN"]
+    elif player_count == 8:
+        return ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "CO", "BTN"]
+    elif player_count == 9:
+        return ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
+    else:
+        # For 10+ players, insert additional MP positions after MP
+        base_start = ["SB", "BB", "UTG", "UTG1"]
+        additional_mp = [f"MP{i}" for i in range(1, player_count - 6)]  # MP1, MP2, MP3...
+        base_end = ["MP", "LJ", "HJ", "CO", "BTN"]
+        return base_start + additional_mp + base_end
+
+
 def process_hand_actions(players_data, actions, small_blind, big_blind):
     """Process hand actions and return processed actions with correct amounts"""
     player_stacks = {p["name"]: p["stack"] for p in players_data}
@@ -203,10 +229,9 @@ def save_hand():
         db.session.flush()  # Get ID
 
         # Save player information with position strings
-        position_mapping = ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
+        positions = get_poker_positions(len(players_data))
         for i, player_data in enumerate(players_data):
-            # Use position string if within range, otherwise fall back to position number
-            position = position_mapping[i] if i < len(position_mapping) else f"P{i}"
+            position = positions[i]
             player = Player(
                 hand_id=hand.id,
                 name=player_data["name"],
@@ -841,10 +866,9 @@ def create_sample():
         db.session.flush()
 
         # Save player information with position strings
-        position_mapping = ["SB", "BB", "UTG", "UTG1", "MP", "LJ", "HJ", "CO", "BTN"]
+        positions = get_poker_positions(len(players_data))
         for i, player_data in enumerate(players_data):
-            # Use position string if within range, otherwise fall back to position number
-            position = position_mapping[i] if i < len(position_mapping) else f"P{i}"
+            position = positions[i]
             player = Player(
                 hand_id=hand.id,
                 name=player_data["name"],
