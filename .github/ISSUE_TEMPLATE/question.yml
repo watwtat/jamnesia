@@ -1,0 +1,75 @@
+name: ❓ 質問・サポート
+description: 使い方や技術的な質問をする
+title: "[Question] "
+labels: ["question", "help-wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        質問をしていただき、ありがとうございます！
+        できるだけ詳細な情報を提供していただくことで、適切なサポートを提供できます。
+
+  - type: textarea
+    id: question
+    attributes:
+      label: ❓ 質問内容
+      description: 具体的な質問を記載してください
+      placeholder: 例：特定のポーカールール（オマハ、スタッド）に対応していますか？
+    validations:
+      required: true
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: 📋 質問の種類
+      description: 質問の種類を選択してください
+      options:
+        - 使い方・操作方法
+        - 機能に関する質問
+        - 技術的な質問
+        - インストール・セットアップ
+        - エラー・トラブルシューティング
+        - 開発・カスタマイズ
+        - その他
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 🔍 詳細・背景
+      description: 質問の背景や、試したことがあれば記載してください
+      placeholder: |
+        例：
+        - どのような目的で使用したいか
+        - 既に試した方法
+        - 調べた情報
+        - 参考にしたドキュメント
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 💻 環境情報
+      description: 関連する環境情報があれば記載してください
+      placeholder: |
+        例：
+        - OS: Windows 11
+        - ブラウザ: Chrome 120
+        - Python: 3.9
+        - デプロイ環境: Docker/Render.com
+
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: 🎯 期待する結果
+      description: 何を実現したいか、期待する動作を記載してください
+      placeholder: 例：オマハポーカーのハンド履歴を管理したい
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: 事前調査
+      options:
+        - label: READMEとドキュメントを確認しました
+        - label: 既存のissueを検索しました
+        - label: ディスカッションを確認しました

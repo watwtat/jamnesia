@@ -1,0 +1,130 @@
+name: 🐛 バグ報告
+description: バグや問題を報告する
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグを報告していただき、ありがとうございます！
+        詳細な情報を提供していただくことで、問題の解決が早くなります。
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐛 バグの概要
+      description: 何が起こったのか、簡潔に説明してください
+      placeholder: 例：新しいハンドを保存しようとすると、エラーメッセージが表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: 📋 再現手順
+      description: バグを再現するための具体的な手順を教えてください
+      placeholder: |
+        1. ログインページにアクセス
+        2. 'Input New Hand'ボタンをクリック
+        3. プレイヤー情報を入力
+        4. 'Save Hand'ボタンをクリック
+        5. エラーが発生
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: ✅ 期待される動作
+      description: 本来どのような動作をするべきかを説明してください
+      placeholder: ハンドが正常に保存され、成功メッセージが表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: ❌ 実際の動作
+      description: 実際にどのような動作になっているかを説明してください
+      placeholder: エラーメッセージが表示され、ハンドが保存されない
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-messages
+    attributes:
+      label: 🚨 エラーメッセージ
+      description: エラーメッセージやログがある場合は、ここに貼り付けてください
+      render: shell
+      placeholder: |
+        例：
+        ValueError: Player not found
+        または
+        500 Internal Server Error
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 🌐 ブラウザ
+      description: 使用しているブラウザを選択してください
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - その他
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: ブラウザバージョン
+      description: ブラウザのバージョンを入力してください
+      placeholder: 例：Chrome 120.0.6099.199
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 💻 OS
+      description: 使用しているOSを選択してください
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - iOS
+        - Android
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: 📱 デバイス
+      description: 使用しているデバイスの種類を選択してください
+      options:
+        - デスクトップ
+        - ノートPC
+        - タブレット
+        - スマートフォン
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 追加情報
+      description: スクリーンショット、追加の説明、関連するコンテキストなどがあれば記載してください
+      placeholder: |
+        - スクリーンショットのURL
+        - 特定の条件下でのみ発生するか
+        - 他のユーザーも同じ問題を経験しているか
+        - 回避策があるか
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 確認事項
+      options:
+        - label: 既存のissueを検索し、重複していないことを確認しました
+          required: true
+        - label: 問題を詳細に調査し、必要な情報を提供しました
+          required: true

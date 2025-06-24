@@ -1,0 +1,151 @@
+name: ✨ 機能要望
+description: 新機能やアイデアを提案する
+title: "[Feature] "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        機能要望をしていただき、ありがとうございます！
+        あなたのアイデアがJamnesiaをより良いものにします。
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: ✨ 機能の概要
+      description: 提案する機能について簡潔に説明してください
+      placeholder: 例：ハンド履歴のフィルタリング機能を追加したい
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: 🤔 解決したい問題
+      description: この機能によってどのような問題が解決されますか？
+      placeholder: |
+        例：
+        現在、大量のハンド履歴の中から特定の条件（日付、プレイヤー、ポジションなど）
+        でハンドを探すのが困難です。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 提案する解決策
+      description: どのような機能や実装方法を想定していますか？
+      placeholder: |
+        例：
+        - ハンド履歴ページにフィルター機能を追加
+        - 日付範囲、プレイヤー名、ポジション、アクションタイプでフィルタリング
+        - フィルター条件を保存・呼び出し可能
+        - 検索結果をCSVでエクスポート可能
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: 👤 ユーザーストーリー
+      description: ユーザーの視点から、この機能をどのように使用するかを説明してください
+      placeholder: |
+        例：
+        「ユーザーとして、特定の期間にプレイしたハンドのみを表示したい。
+        なぜなら、先月のプレイ結果を分析したいから。」
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 🎯 対象ユーザー
+      description: この機能は主にどのようなユーザーが使用しますか？
+      options:
+        - 初心者プレイヤー
+        - 中級プレイヤー
+        - 上級プレイヤー
+        - プロプレイヤー
+        - 全てのユーザー
+        - 管理者
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⭐ 優先度
+      description: この機能の優先度を評価してください
+      options:
+        - 低（あると良い）
+        - 中（重要）
+        - 高（必須）
+        - 緊急（早急に必要）
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 代替案
+      description: 他に考えられる解決方法や実装方法があれば記載してください
+      placeholder: |
+        例：
+        - 外部ツールでの分析機能
+        - モバイルアプリでの実装
+        - サードパーティ統合
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: ⚙️ 技術的考慮事項
+      description: 実装において考慮すべき技術的な要素があれば記載してください
+      placeholder: |
+        例：
+        - データベースのパフォーマンス影響
+        - 既存APIの変更が必要
+        - フロントエンドのUI/UX変更
+        - セキュリティ上の考慮事項
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ 受け入れ基準
+      description: この機能が完成したと判断する基準を記載してください
+      placeholder: |
+        例：
+        - [ ] 日付範囲でフィルタリングできる
+        - [ ] プレイヤー名で検索できる
+        - [ ] フィルター条件を保存できる
+        - [ ] 検索結果をエクスポートできる
+        - [ ] モバイルデバイスで正常に動作する
+
+  - type: textarea
+    id: mockup-design
+    attributes:
+      label: 🎨 UI/UXイメージ
+      description: 画面のイメージやワイヤーフレーム、参考となるデザインがあれば記載してください
+      placeholder: |
+        - 画像URL
+        - 参考サイト
+        - デザインの説明
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 追加情報
+      description: その他の関連情報、参考資料、類似機能の例などがあれば記載してください
+      placeholder: |
+        - 参考となるWebサイトやアプリ
+        - 関連するGitHubリポジトリ
+        - 技術記事やドキュメント
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 確認事項
+      options:
+        - label: 既存のissueを検索し、重複していないことを確認しました
+          required: true
+        - label: この機能がプロジェクトの目標と一致することを確認しました
+          required: true
+        - label: 十分な詳細情報を提供しました
+          required: true
