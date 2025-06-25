@@ -25,7 +25,7 @@
             {% for player in players %}
             <div class="flex justify-between items-center bg-white rounded p-2">
                 <div>
-                    <span class="font-medium">{{ player.name }}</span>
+                    <span class="font-medium">{{ player.name or 'unknown' }}</span>
                     {% if player.hole_cards %}
                         <span class="text-sm text-gray-600 ml-2">({{ player.hole_cards }})</span>
                     {% endif %}
@@ -47,7 +47,7 @@
             {% for action in actions %}
             <div class="flex justify-between items-center bg-white rounded p-2">
                 <div>
-                    <span class="font-medium">{{ action.player_name }}</span>
+                    <span class="font-medium">{{ action.player_name or 'unknown' }}</span>
                     <span class="text-sm text-gray-600 ml-2">({{ action.street }})</span>
                 </div>
                 <div class="text-right">

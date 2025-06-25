@@ -544,7 +544,7 @@ class HandReplay {
             }
             
             playerElement.innerHTML = `
-                <div class="text-xs font-bold mb-1">${player.name}</div>
+                <div class="text-xs font-bold mb-1">${player.name || 'unknown'}</div>
                 <div class="text-xs text-gray-600 mb-1 flex items-center justify-center">
                     ${player.position}
                     ${this.isButtonPlayer(player, players) ? '<span class="ml-1 bg-yellow-400 text-black rounded-full text-xs px-1.5 py-0.5 font-bold" style="box-shadow: 0 3px 6px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6); border: 1px solid #d4a017;">D</span>' : ''}
