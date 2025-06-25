@@ -284,5 +284,348 @@ class TestPokerHandBuilderEdgeCases(unittest.TestCase):
         self.assertEqual(actions[1]["amount"], 0)
 
 
+class TestPHHOutputFormat(unittest.TestCase):
+    """Comprehensive tests for PHH output format validation"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.builder = PokerHandBuilder()
+
+    def test_phh_format_heads_up_hand(self):
+        """Test complete PHH output format for heads-up hand"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({"Alice": "AsKh", "Bob": "QdQc"})
+        self.builder.add_action("Alice", "bet", 5.0)
+        self.builder.add_action("Bob", "call")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0]
+blinds_or_straddles = [1, 2]
+min_bet = 2
+starting_stacks = [100, 150]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+p0 cbr 5
+p1 cc"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_three_player_hand(self):
+        """Test complete PHH output format for three-player hand"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0},
+            {"name": "Charlie", "stack": 200.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({
+            "Alice": "AsKh", 
+            "Bob": "QdQc", 
+            "Charlie": "7s2h"
+        })
+        self.builder.add_action("Charlie", "fold")
+        self.builder.add_action("Alice", "bet", 6.0)
+        self.builder.add_action("Bob", "call")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [100, 150, 200]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+d dh p2 7s2h
+p2 f
+p0 cbr 6
+p1 cc"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_with_board_cards(self):
+        """Test PHH format with flop, turn, and river"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({"Alice": "AsKh", "Bob": "QdQc"})
+        self.builder.deal_flop("AhKd5c")
+        self.builder.add_action("Alice", "check")
+        self.builder.add_action("Bob", "bet", 10.0)
+        self.builder.deal_turn("9s")
+        self.builder.add_action("Alice", "call")
+        self.builder.deal_river("3d")
+        self.builder.add_action("Alice", "fold")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0]
+blinds_or_straddles = [1, 2]
+min_bet = 2
+starting_stacks = [100, 150]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+d db AhKd5c
+p0 cc
+p1 cbr 10
+d db 9s
+p0 cc
+d db 3d
+p0 f"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_all_action_types(self):
+        """Test PHH format with all different action types"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0},
+            {"name": "Charlie", "stack": 200.0},
+            {"name": "David", "stack": 250.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({
+            "Alice": "AsKh", 
+            "Bob": "QdQc", 
+            "Charlie": "7s2h",
+            "David": "AcKc"
+        })
+        self.builder.add_action("Charlie", "fold")
+        self.builder.add_action("David", "raise", 8.0)
+        self.builder.add_action("Alice", "call")
+        self.builder.add_action("Bob", "check")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0, 0, 0]
+blinds_or_straddles = [1, 2, 0, 0]
+min_bet = 2
+starting_stacks = [100, 150, 200, 250]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+d dh p2 7s2h
+d dh p3 AcKc
+p2 f
+p3 cbr 8
+p0 cc
+p1 cc"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_large_blinds(self):
+        """Test PHH format with large blind values"""
+        players = [
+            {"name": "Alice", "stack": 1000.0},
+            {"name": "Bob", "stack": 1500.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=25.0, big_blind=50.0)
+        self.builder.deal_hole_cards({"Alice": "AsKh", "Bob": "QdQc"})
+        self.builder.add_action("Alice", "bet", 150.0)
+        self.builder.add_action("Bob", "raise", 450.0)
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0]
+blinds_or_straddles = [25, 50]
+min_bet = 50
+starting_stacks = [1000, 1500]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+p0 cbr 150
+p1 cbr 450"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_single_player(self):
+        """Test PHH format with single player (edge case)"""
+        players = [{"name": "Alice", "stack": 100.0}]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({"Alice": "AsKh"})
+        self.builder.add_action("Alice", "check")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0]
+blinds_or_straddles = [1]
+min_bet = 2
+starting_stacks = [100]
+
+# Actions
+d dh p0 AsKh
+p0 cc"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_no_hole_cards(self):
+        """Test PHH format when no hole cards are dealt"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_flop("AhKd5c")
+        self.builder.add_action("Alice", "check")
+        self.builder.add_action("Bob", "bet", 10.0)
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0]
+blinds_or_straddles = [1, 2]
+min_bet = 2
+starting_stacks = [100, 150]
+
+# Actions
+d db AhKd5c
+p0 cc
+p1 cbr 10"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_partial_hole_cards(self):
+        """Test PHH format when only some players have hole cards"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0},
+            {"name": "Charlie", "stack": 200.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        # Only Alice and Bob get hole cards
+        self.builder.deal_hole_cards({"Alice": "AsKh", "Bob": "QdQc"})
+        self.builder.add_action("Charlie", "fold")
+        self.builder.add_action("Alice", "bet", 5.0)
+        self.builder.add_action("Bob", "call")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [100, 150, 200]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+p2 f
+p0 cbr 5
+p1 cc"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_empty_game(self):
+        """Test PHH format for empty game"""
+        expected_phh = 'variant = "NLHE"'
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_no_players(self):
+        """Test PHH format with no players"""
+        self.builder.create_game([])
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = []
+blinds_or_straddles = []
+min_bet = 2
+starting_stacks = []
+
+# Actions"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+    def test_phh_format_complex_multistreet_hand(self):
+        """Test PHH format for complex hand with multiple streets and actions"""
+        players = [
+            {"name": "Alice", "stack": 100.0},
+            {"name": "Bob", "stack": 150.0},
+            {"name": "Charlie", "stack": 200.0}
+        ]
+        
+        self.builder.create_game(players, small_blind=1.0, big_blind=2.0)
+        self.builder.deal_hole_cards({
+            "Alice": "AsKh", 
+            "Bob": "QdQc", 
+            "Charlie": "7s2h"
+        })
+        
+        # Preflop
+        self.builder.add_action("Charlie", "fold")
+        self.builder.add_action("Alice", "raise", 6.0)
+        self.builder.add_action("Bob", "call")
+        
+        # Flop
+        self.builder.deal_flop("AhKd5c")
+        self.builder.add_action("Alice", "bet", 10.0)
+        self.builder.add_action("Bob", "call")
+        
+        # Turn
+        self.builder.deal_turn("9s")
+        self.builder.add_action("Alice", "check")
+        self.builder.add_action("Bob", "bet", 20.0)
+        
+        # River
+        self.builder.deal_river("3d")
+        self.builder.add_action("Alice", "fold")
+        
+        expected_phh = """variant = "NLHE"
+ante_trimming_status = true
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [100, 150, 200]
+
+# Actions
+d dh p0 AsKh
+d dh p1 QdQc
+d dh p2 7s2h
+p2 f
+p0 cbr 6
+p1 cc
+d db AhKd5c
+p0 cbr 10
+p1 cc
+d db 9s
+p0 cc
+p1 cbr 20
+d db 3d
+p0 f"""
+        
+        actual_phh = self.builder.generate_phh()
+        self.assertEqual(actual_phh, expected_phh)
+
+
 if __name__ == "__main__":
     unittest.main()
