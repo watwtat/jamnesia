@@ -284,5 +284,112 @@ class TestPokerHandBuilderEdgeCases(unittest.TestCase):
         self.assertEqual(actions[1]["amount"], 0)
 
 
+class TestAutomaticFoldPHH(unittest.TestCase):
+    """Test PHH generation for automatic fold scenarios"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.builder = PokerHandBuilder()
+        self.players_data = [
+            {"name": "Alice", "stack": 100},
+            {"name": "Bob", "stack": 100}, 
+            {"name": "Charlie", "stack": 100}
+        ]
+
+    def test_automatic_fold_phh_output(self):
+        """Test that automatic folds are correctly represented in PHH output"""
+        from app import process_hand_actions
+        
+        # Create game with 3 players
+        self.builder.create_game(self.players_data, small_blind=1.0, big_blind=2.0)
+        
+        # Only Alice and Bob take actions, Charlie should auto-fold
+        actions = [
+            {"player_name": "Alice", "action_type": "call", "amount": 1},
+            {"player_name": "Bob", "action_type": "check"}
+            # Charlie has no action - should get auto-folded
+        ]
+        
+        # Process actions (includes automatic fold logic)
+        processed_actions = process_hand_actions(self.players_data, actions, 1.0, 2.0)
+        
+        # Add processed actions to builder
+        self.builder.hand_data["actions"] = processed_actions
+        
+        # Generate PHH
+        phh = self.builder.generate_phh()
+        
+        # Verify Charlie (p2) appears as fold in PHH
+        self.assertIn("p2 f", phh, "Auto-folded player should appear as 'p2 f' in PHH")
+        
+        # Verify other players' actions
+        self.assertIn("p0 cc", phh)  # Alice call
+        self.assertIn("p1 cc", phh)  # Bob check
+        
+        # Verify PHH structure is valid
+        self.assertIn('variant = "NLHE"', phh)
+        self.assertIn("starting_stacks = [100, 100, 100]", phh)
+
+    def test_multiple_automatic_folds_phh(self):
+        """Test PHH with multiple automatic folds"""
+        from app import process_hand_actions
+        
+        # Setup 4 players
+        players_data = [
+            {"name": "Alice", "stack": 100},
+            {"name": "Bob", "stack": 100},
+            {"name": "Charlie", "stack": 100},
+            {"name": "Dave", "stack": 100}
+        ]
+        
+        self.builder.create_game(players_data, small_blind=1.0, big_blind=2.0)
+        
+        # Only Alice takes action, others auto-fold
+        actions = [
+            {"player_name": "Alice", "action_type": "raise", "amount": 10}
+            # Bob, Charlie, Dave all auto-fold
+        ]
+        
+        processed_actions = process_hand_actions(players_data, actions, 1.0, 2.0)
+        self.builder.hand_data["actions"] = processed_actions
+        
+        phh = self.builder.generate_phh()
+        
+        # Verify all auto-folds appear correctly
+        self.assertIn("p1 f", phh, "Bob should auto-fold as p1 f")
+        self.assertIn("p2 f", phh, "Charlie should auto-fold as p2 f") 
+        self.assertIn("p3 f", phh, "Dave should auto-fold as p3 f")
+        
+        # Verify Alice's action
+        self.assertIn("p0 cbr 10", phh, "Alice's raise should appear as p0 cbr 10")
+
+    def test_no_automatic_folds_needed(self):
+        """Test PHH when all players have actions (no auto-folds)"""
+        from app import process_hand_actions
+        
+        self.builder.create_game(self.players_data, small_blind=1.0, big_blind=2.0)
+        
+        # All players have actions
+        actions = [
+            {"player_name": "Alice", "action_type": "call", "amount": 1},
+            {"player_name": "Bob", "action_type": "check"},
+            {"player_name": "Charlie", "action_type": "raise", "amount": 5}
+        ]
+        
+        processed_actions = process_hand_actions(self.players_data, actions, 1.0, 2.0)
+        self.builder.hand_data["actions"] = processed_actions
+        
+        phh = self.builder.generate_phh()
+        
+        # Verify all actions appear, no extra folds
+        self.assertIn("p0 cc", phh)    # Alice call
+        self.assertIn("p1 cc", phh)    # Bob check  
+        self.assertIn("p2 cbr 5", phh) # Charlie raise
+        
+        # Count fold actions - should be 0
+        fold_count = phh.count(" f")
+        self.assertEqual(fold_count, 0, "No automatic folds should be present")
+
+
 if __name__ == "__main__":
     unittest.main()
