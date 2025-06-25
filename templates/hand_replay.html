@@ -427,8 +427,13 @@ class HandReplay {
         }
         
         // ストリートが変わった場合、アクション表示をクリア（フォールドは除く）
+        // ただし、新しいストリートで実際にアクションが取られるまでは前のストリートのアクションを表示し続ける
         if (streetChanged && !player.is_folded) {
-            return null;
+            // 現在のステップで何らかのアクションがある場合のみクリア
+            // （intermediate stepではaction=nullなので、この条件でアクションを保持）
+            if (currentAction) {
+                return null;
+            }
         }
         
         // アクションしていない場合は、このプレイヤーの最後のアクションを探す
